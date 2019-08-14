@@ -44,7 +44,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_List_Request
         }
 
         $additionalData = $this->getListingProduct()->getAdditionalData();
-        $additionalData['variations_that_can_not_be_deleted'] = array();
+        $additionalData['variations_that_can_not_be_deleted'] = [];
         $this->getListingProduct()->setSettings('additional_data', $additionalData)->save();
 
         foreach ($variations as $variation) {
@@ -114,50 +114,6 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_List_Request
         }
 
         return $theSameListingProduct;
-    }
-
-    public function getVariationAttributesWithSpacesAroundName()
-    {
-        /** @var Ess_M2ePro_Model_Listing_Product_Variation[] $variations */
-        $variations = $this->getListingProduct()->getVariations(true);
-
-        $resultAttributes = array();
-
-        foreach ($variations as $variation) {
-
-            /** @var Ess_M2ePro_Model_Listing_Product_Variation_Option[] $options */
-            $options = $variation->getOptions(true);
-
-            foreach ($options as $option) {
-                if ($option->getAttribute() != trim($option->getAttribute())) {
-                    $resultAttributes[] = $option->getAttribute();
-                }
-            }
-        }
-
-        return $resultAttributes;
-    }
-
-    public function getVariationOptionsWithSpacesAroundName()
-    {
-        /** @var Ess_M2ePro_Model_Listing_Product_Variation[] $variations */
-        $variations = $this->getListingProduct()->getVariations(true);
-
-        $resultOptions = array();
-
-        foreach ($variations as $variation) {
-
-            /** @var Ess_M2ePro_Model_Listing_Product_Variation_Option[] $options */
-            $options = $variation->getOptions(true);
-
-            foreach ($options as $option) {
-                if ($option->getOption() != trim($option->getOption())) {
-                    $resultOptions[] = $option->getOption();
-                }
-            }
-        }
-
-        return $resultOptions;
     }
 
     //########################################

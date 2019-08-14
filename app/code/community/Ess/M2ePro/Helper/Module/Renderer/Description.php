@@ -98,9 +98,12 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
 
         $imageLink = $magentoProduct->getImageLink('image');
 
+        $blockObj = Mage::getSingleton('core/layout')->createBlock(
+            'M2ePro/adminhtml_renderer_description_image'
+        );
+
         $search = array();
         $replace = array();
-
         foreach ($matches[0] as $key => $match) {
 
             $tempImageAttributes = explode(',', $matches[1][$key]);
@@ -117,18 +120,13 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
                 ? $imageLink
                 : $magentoProduct->getGalleryImageLink($realImageAttributes[5]);
 
-            $blockObj = Mage::getSingleton('core/layout')->createBlock(
-                'M2ePro/adminhtml_renderer_description_image'
-            );
-
             $data = array(
-                'width'        => $realImageAttributes[0],
-                'height'       => $realImageAttributes[1],
-                'margin'       => $realImageAttributes[2],
-                'linked_mode'  => $realImageAttributes[3],
-                'watermark'    => $realImageAttributes[4],
-                'src'          => $tempImageLink,
-                'index_number' => $key
+                'width'       => $realImageAttributes[0],
+                'height'      => $realImageAttributes[1],
+                'margin'      => $realImageAttributes[2],
+                'linked_mode' => $realImageAttributes[3],
+                'watermark'   => $realImageAttributes[4],
+                'src'         => $tempImageLink
             );
             $search[] = $match;
             $replace[] = ($tempImageLink == '')
@@ -149,9 +147,13 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
             return $text;
         }
 
+        $blockObj = Mage::getSingleton('core/layout')->createBlock(
+            'M2ePro/adminhtml_renderer_description_gallery'
+        );
+
         $search = array();
         $replace = array();
-
+        $attributeCounter = 0;
         foreach ($matches[0] as $key => $match) {
             $tempMediaGalleryAttributes = explode(',', $matches[1][$key]);
             $realMediaGalleryAttributes = array();
@@ -186,16 +188,20 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
                 'linked_mode'  => (int)$realMediaGalleryAttributes[3],
                 'layout'       => $realMediaGalleryAttributes[4],
                 'gallery_hint' => trim($realMediaGalleryAttributes[6], '"'),
-                'watermark'    => (int)$realMediaGalleryAttributes[7],
-                'images'       => $galleryImagesLinks,
-                'index_number' => $key
+                'watermark' => (int)$realMediaGalleryAttributes[7],
+                'images_count' => count($galleryImagesLinks),
+                'image_counter' => 0
             );
 
-            $blockObj = Mage::getSingleton('core/layout')->createBlock(
-                'M2ePro/adminhtml_renderer_description_gallery'
-            );
-            $tempHtml = $blockObj->setData($data)->toHtml();
+            $tempHtml = '';
+            $attributeCounter++;
 
+            foreach ($galleryImagesLinks as $imageLink) {
+                $data['image_counter']++;
+                $data['attribute_counter'] = $attributeCounter;
+                $data['src'] = $imageLink;
+                $tempHtml .= $blockObj->addData($data)->toHtml();
+            }
             $search[] = $match;
             $replace[] = preg_replace('/\s{2,}/', '', $tempHtml);
         }

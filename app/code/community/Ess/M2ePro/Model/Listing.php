@@ -426,8 +426,6 @@ class Ess_M2ePro_Model_Listing extends Ess_M2ePro_Model_Component_Parent_Abstrac
             Mage::helper('M2ePro/Component')->getComponentModel($this->getComponentMode(),'Listing_Product')
                                     ->setData($data)->save();
 
-        $listingProductTemp->getChildObject()->afterSaveNewEntity();
-
         $variationUpdaterModel = ucwords($this->getComponentMode()).'_Listing_Product_Variation_Updater';
         /** @var Ess_M2ePro_Model_Listing_Product_Variation_Updater $variationUpdaterObject */
         $variationUpdaterObject = Mage::getModel('M2ePro/'.$variationUpdaterModel);
@@ -597,7 +595,7 @@ class Ess_M2ePro_Model_Listing extends Ess_M2ePro_Model_Component_Parent_Abstrac
 
                         $variationsThatCanNotBeDeleted[] = array(
                             'qty'       => 0,
-                            'price'     => $ebayVariation->getOnlinePrice(),
+                            'price'     => $ebayVariation->getPrice(),
                             'sku'       => $ebayVariation->getOnlineSku(),
                             'add'       => 0,
                             'delete'    => 1,

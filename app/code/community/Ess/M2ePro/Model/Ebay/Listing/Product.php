@@ -104,10 +104,6 @@ class Ess_M2ePro_Model_Ebay_Listing_Product extends Ess_M2ePro_Model_Component_C
 
     //########################################
 
-    public function afterSaveNewEntity() {}
-
-    //########################################
-
     /**
      * @return Ess_M2ePro_Model_Ebay_Item
      */

@@ -38,16 +38,14 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
             return;
         }
 
-        $channelVariations = $this->getProcessor()->getTypeModel()->getChannelVariations();
-
         foreach ($this->getProcessor()->getTypeModel()->getChildListingsProducts() as $listingProduct) {
             /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
 
-            /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
-            $amazonListingProduct = $listingProduct->getChildObject();
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager $variationManager */
+            $variationManager = $listingProduct->getChildObject()->getVariationManager();
 
             /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Child $typeModel */
-            $typeModel = $amazonListingProduct->getVariationManager()->getTypeModel();
+            $typeModel = $variationManager->getTypeModel();
 
             if (!$typeModel->isActualProductAttributes() ||
                 !$typeModel->isActualMatchedAttributes() ||
@@ -55,15 +53,6 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
                 !$typeModel->isActualProductVariation())
             ) {
                 $typeModel->resetProductVariation();
-            }
-
-            if ($typeModel->isVariationChannelMatched()) {
-                $currentChannelOptions = $channelVariations[$amazonListingProduct->getGeneralId()];
-                $childChannelOptions   = $typeModel->getChannelOptions();
-
-                if ($currentChannelOptions != $childChannelOptions) {
-                    $typeModel->setChannelVariation($currentChannelOptions);
-                }
             }
 
             if (!$typeModel->isVariationProductMatched() && !$typeModel->isVariationChannelMatched()) {

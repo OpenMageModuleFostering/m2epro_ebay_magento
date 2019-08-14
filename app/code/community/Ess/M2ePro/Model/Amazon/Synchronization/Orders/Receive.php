@@ -47,45 +47,39 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Receive
         $iteration = 0;
         $percentsForOneAccount = $this->getPercentsInterval() / count($permittedAccounts);
 
-        foreach ($permittedAccounts as $merchantId => $accounts) {
+        foreach ($permittedAccounts as $account) {
 
             /** @var $account Ess_M2ePro_Model_Account **/
 
-            $accountsIds = array();
-            $accountsTitles = array();
-            foreach ($accounts as $account) {
-                $accountsIds[] = $account->getId();
-                $accountsTitles[] = $account->getTitle();
+            // ---------------------------------------
+            $this->getActualOperationHistory()->addText('Starting Account "'.$account->getTitle().'"');
+            // M2ePro_TRANSLATIONS
+            // The "Receive" Action for Amazon Account: "%account_title%" is started. Please wait...
+            $status = 'The "Receive" Action for Amazon Account: "%account_title%" is started. Please wait...';
+            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
+            // ---------------------------------------
+
+            if (!$this->isLockedAccount($account)) {
+
+                // ---------------------------------------
+                $this->getActualOperationHistory()->addTimePoint(
+                    __METHOD__.'process'.$account->getId(),
+                    'Process Account '.$account->getTitle()
+                );
+                // ---------------------------------------
+
+                $this->processAccount($account);
+
+                // ---------------------------------------
+                $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'process'.$account->getId());
+                // ---------------------------------------
             }
-            $accountsIds = implode(', ',$accountsIds);
-            $accountsTitles = implode(', ',$accountsTitles);
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->addText('Starting Accounts "'.$accountsTitles.'"');
-            // M2ePro_TRANSLATIONS
-            // The "Receive" Action for Amazon Accounts: "%account_title%" is started. Please wait...
-            $status = 'The "Receive" Action for Amazon Accounts: "%account_title%" is started. Please wait...';
-            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $accountsTitles));
-            // ---------------------------------------
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->addTimePoint(
-                __METHOD__.'process'.$accountsIds,
-                'Process Accounts '.$accountsTitles
-            );
-            // ---------------------------------------
-
-            $this->processAccounts($merchantId, $accounts);
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'process'.$accountsIds);
-            // ---------------------------------------
 
             // ---------------------------------------
             // M2ePro_TRANSLATIONS
-            // The "Receive" Action for Amazon Accounts: "%account_title%" is finished. Please wait...
-            $status = 'The "Receive" Action for Amazon Accounts: "%account_title%" is finished. Please wait...';
-            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $accountsTitles));
+            // The "Receive" Action for Amazon Account: "%account_title%" is finished. Please wait...
+            $status = 'The "Receive" Action for Amazon Account: "%account_title%" is finished. Please wait...';
+            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
             $this->getActualLockItem()->setPercents($this->getPercentsStart() + $iteration * $percentsForOneAccount);
             $this->getActualLockItem()->activate();
             // ---------------------------------------
@@ -100,67 +94,47 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Receive
     {
         /** @var $accountsCollection Mage_Core_Model_Mysql4_Collection_Abstract */
         $accountsCollection = Mage::helper('M2ePro/Component_Amazon')->getCollection('Account');
-
-        $accounts = array();
-        foreach ($accountsCollection->getItems() as $accountItem) {
-            /** @var $accountItem Ess_M2ePro_Model_Account */
-
-            $merchantId = $accountItem->getChildObject()->getMerchantId();
-            if (!isset($accounts[$merchantId])) {
-                $accounts[$merchantId] = array();
-            }
-
-            $accounts[$merchantId][] = $accountItem;
-        }
-
-        return $accounts;
+        return $accountsCollection->getItems();
     }
 
     // ---------------------------------------
 
-    private function processAccounts($merchantId, array $accounts)
+    private function isLockedAccount(Ess_M2ePro_Model_Account $account)
     {
-        $updateSinceTime = Mage::getSingleton('M2ePro/Config_Synchronization')->getGroupValue(
-            "/amazon/orders/receive/{$merchantId}/", "from_update_date"
-        );
+        /** @var $lockItem Ess_M2ePro_Model_LockItem */
+        $lockItem = Mage::getModel('M2ePro/LockItem');
+        $lockItem->setNick(self::LOCK_ITEM_PREFIX.'_'.$account->getId());
+        $lockItem->setMaxInactiveTime(Ess_M2ePro_Model_Processing_Request::MAX_LIFE_TIME_INTERVAL);
+        return $lockItem->isExist();
+    }
 
-        $fromDate = $this->prepareFromDate($updateSinceTime);
-        $toDate = $this->prepareToDate();
-
-        if (strtotime($fromDate) >= strtotime($toDate)) {
-            $fromDate = new DateTime($toDate, new DateTimeZone('UTC'));
-            $fromDate->modify('- 5 minutes');
-
-            $fromDate = $fromDate->format('Y-m-d H:i:s');
-        }
-
+    private function processAccount(Ess_M2ePro_Model_Account $account)
+    {
+        $fromDate = $this->prepareFromDate($account->getData('orders_last_synchronization'));
         $params = array(
-            'accounts' => $accounts,
-            'from_update_date' => $fromDate,
-            'to_update_date'=> $toDate
+            'from_date' => $fromDate
         );
 
-        $jobToken = Mage::getSingleton('M2ePro/Config_Synchronization')->getGroupValue(
-            "/amazon/orders/receive/{$merchantId}/", "job_token"
-        );
+        /** @var Ess_M2ePro_Model_Amazon_Account $amazonAccount */
+        $amazonAccount = $account->getChildObject();
 
-        if (!empty($jobToken)) {
-            $params['job_token'] = $jobToken;
+        if (is_null($amazonAccount->getData('orders_last_synchronization'))) {
+            $amazonAccount->setData('orders_last_synchronization', $fromDate)->save();
         }
 
         $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
-        $connectorObj = $dispatcherObject->getConnector(
-            'orders', 'receive', 'requester', $params, NULL,
-            'Ess_M2ePro_Model_Amazon_Synchronization'
-        );
+        $connectorObj = $dispatcherObject->getConnector('orders', 'receive', 'requester',
+                                                        $params, $account, 'Ess_M2ePro_Model_Amazon_Synchronization');
         $dispatcherObject->process($connectorObj);
     }
+
+    //########################################
 
     private function prepareFromDate($lastFromDate)
     {
         // Get last from date
         // ---------------------------------------
-        if (empty($lastFromDate)) {
+        if (is_null($lastFromDate)) {
             $lastFromDate = new DateTime('now', new DateTimeZone('UTC'));
         } else {
             $lastFromDate = new DateTime($lastFromDate, new DateTimeZone('UTC'));
@@ -170,7 +144,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Receive
         // Get min date for synch
         // ---------------------------------------
         $minDate = new DateTime('now',new DateTimeZone('UTC'));
-        $minDate->modify('-30 days');
+        $minDate->modify('-7 days');
         // ---------------------------------------
 
         // Prepare last date
@@ -181,19 +155,6 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Receive
         // ---------------------------------------
 
         return $lastFromDate->format('Y-m-d H:i:s');
-    }
-
-    private function prepareToDate()
-    {
-        $operationHistory = $this->getActualOperationHistory()->getParentObject('synchronization');
-        if (!is_null($operationHistory)) {
-            $toDate = $operationHistory->getData('start_date');
-        } else {
-            $toDate = new DateTime('now', new DateTimeZone('UTC'));
-            $toDate = $toDate->format('Y-m-d H:i:s');
-        }
-
-        return $toDate;
     }
 
     //########################################

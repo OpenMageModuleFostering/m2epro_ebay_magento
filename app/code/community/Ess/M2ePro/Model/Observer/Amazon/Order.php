@@ -31,10 +31,7 @@ class Ess_M2ePro_Model_Observer_Amazon_Order extends Ess_M2ePro_Model_Observer_A
                 continue;
             }
 
-            /** @var $magentoStockItem Ess_M2ePro_Model_Magento_Product_StockItem */
-            $magentoStockItem = Mage::getSingleton('M2ePro/Magento_Product_StockItem');
-            $magentoStockItem->setStockItem($stockItem);
-            $magentoStockItem->addQty($orderItem->getQtyOrdered());
+            $stockItem->addQty($orderItem->getQtyOrdered())->save();
         }
     }
 

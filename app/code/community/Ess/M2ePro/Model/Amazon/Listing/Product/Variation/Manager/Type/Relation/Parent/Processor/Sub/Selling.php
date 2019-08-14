@@ -17,13 +17,10 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
     {
         $qty = null;
         $price = null;
-
-        $isAfn = Ess_M2ePro_Model_Amazon_Listing_Product::IS_AFN_CHANNEL_NO;
-        $isRepricing = Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_NO;
-        $repricingEnabled = $repricingDisabled = 0;
+        $afn = Ess_M2ePro_Model_Amazon_Listing_Product::IS_AFN_CHANNEL_NO;
+        $repricing = Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_NO;
 
         foreach ($this->getProcessor()->getTypeModel()->getChildListingsProducts() as $listingProduct) {
-
             if ($listingProduct->isNotListed()) {
                 continue;
             }
@@ -31,16 +28,15 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
             /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
             $amazonListingProduct = $listingProduct->getChildObject();
 
-            if ($amazonListingProduct->isRepricingUsed()) {
+            if (Mage::helper('M2ePro/Component_Amazon')->isRepricingEnabled() &&
+                $repricing === Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_NO &&
+                $amazonListingProduct->isRepricing()) {
 
-                $isRepricing = Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_YES;
-
-                $amazonListingProduct->isRepricingDisabled() && $repricingDisabled++;
-                $amazonListingProduct->isRepricingEnabled()  && $repricingEnabled++;
+                $repricing = Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_YES;
             }
 
             if ($amazonListingProduct->isAfnChannel()) {
-                $isAfn = Ess_M2ePro_Model_Amazon_Listing_Product::IS_AFN_CHANNEL_YES;
+                $afn = Ess_M2ePro_Model_Amazon_Listing_Product::IS_AFN_CHANNEL_YES;
                 continue;
             }
 
@@ -51,7 +47,6 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
             $salePrice = (float)$amazonListingProduct->getOnlineSalePrice();
 
             if ($salePrice > 0) {
-
                 $startDateTimestamp = strtotime($amazonListingProduct->getOnlineSalePriceStartDate());
                 $endDateTimestamp   = strtotime($amazonListingProduct->getOnlineSalePriceEndDate());
 
@@ -73,16 +68,9 @@ class Ess_M2EPro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
         $this->getProcessor()->getListingProduct()->addData(array(
             'online_qty'        => $qty,
             'online_price'      => $price,
-            'is_afn_channel'    => $isAfn,
-            'is_repricing'      => $isRepricing
+            'is_afn_channel'    => $afn,
+            'is_repricing'      => $repricing
         ));
-
-        $this->getProcessor()->getListingProduct()->setSetting(
-            'additional_data', 'repricing_enabled_count', $repricingEnabled
-        );
-        $this->getProcessor()->getListingProduct()->setSetting(
-            'additional_data', 'repricing_disabled_count', $repricingDisabled
-        );
     }
 
     //########################################

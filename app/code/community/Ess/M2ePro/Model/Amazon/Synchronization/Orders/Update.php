@@ -11,7 +11,9 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Update
 {
     const LOCK_ITEM_PREFIX = 'synchronization_amazon_orders_update';
 
-    const MAX_UPDATES_PER_TIME = 1000;
+    // we have a limit on the server to retrieve only last 30 orders
+    // so if we will update 30 or more orders at a time, we will not be able to receive all updated orders next time
+    const MAX_UPDATES_PER_TIME = 25;
 
     //########################################
 
@@ -51,45 +53,39 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Update
         $iteration = 0;
         $percentsForOneStep = $this->getPercentsInterval() / count($permittedAccounts);
 
-        foreach ($permittedAccounts as $accounts) {
+        foreach ($permittedAccounts as $account) {
 
             /** @var Ess_M2ePro_Model_Account $account */
 
-            $accountsIds = array();
-            $accountsTitles = array();
-            foreach ($accounts as $account) {
-                $accountsIds[] = $account->getId();
-                $accountsTitles[] = $account->getTitle();
+            // ---------------------------------------
+            $this->getActualOperationHistory()->addText('Starting Account "'.$account->getTitle().'"');
+            // M2ePro_TRANSLATIONS
+            // The "Update" Action for Amazon Account: "%account_title%" is started. Please wait...
+            $status = 'The "Update" Action for Amazon Account: "%account_title%" is started. Please wait...';
+            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
+            // ---------------------------------------
+
+            if (!$this->isLockedAccount($account->getId())) {
+
+                // ---------------------------------------
+                $this->getActualOperationHistory()->addTimePoint(
+                    __METHOD__.'process'.$account->getId(),
+                    'Process Account '.$account->getTitle()
+                );
+                // ---------------------------------------
+
+                $this->processAccount($account);
+
+                // ---------------------------------------
+                $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'process'.$account->getId());
+                // ---------------------------------------
             }
-            $accountsIds = implode(', ',$accountsIds);
-            $accountsTitles = implode(', ',$accountsTitles);
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->addText('Starting Accounts "'.$accountsTitles.'"');
-            // M2ePro_TRANSLATIONS
-            // The "Update" Action for Amazon Accounts: "%account_title%" is started. Please wait...
-            $status = 'The "Update" Action for Amazon Accounts: "%account_title%" is started. Please wait...';
-            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $accountsTitles));
-            // ---------------------------------------
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->addTimePoint(
-                __METHOD__.'process'.$accountsIds,
-                'Process Accounts '.$accountsTitles
-            );
-            // ---------------------------------------
-
-            $this->processAccounts($accounts);
-
-            // ---------------------------------------
-            $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'process'.$accountsIds);
-            // ---------------------------------------
 
             // ---------------------------------------
             // M2ePro_TRANSLATIONS
-            // The "Update" Action for Amazon Accounts: "%account_title%" is finished. Please wait...
-            $status = 'The "Update" Action for Amazon Accounts: "%account_title%" is finished. Please wait...';
-            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $accountsTitles));
+            // The "Update" Action for Amazon Account: "%account_title%" is finished. Please wait...
+            $status = 'The "Update" Action for Amazon Account: "%account_title%" is finished. Please wait...';
+            $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
             $this->getActualLockItem()->setPercents($this->getPercentsStart() + $iteration * $percentsForOneStep);
             $this->getActualLockItem()->activate();
             // ---------------------------------------
@@ -104,41 +100,25 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Update
     {
         /** @var $accountsCollection Mage_Core_Model_Mysql4_Collection_Abstract */
         $accountsCollection = Mage::helper('M2ePro/Component_Amazon')->getCollection('Account');
-
-        $accounts = array();
-        foreach ($accountsCollection->getItems() as $accountItem) {
-            /** @var $accountItem Ess_M2ePro_Model_Account */
-
-            $merchantId = $accountItem->getChildObject()->getMerchantId();
-            if (!isset($accounts[$merchantId])) {
-                $accounts[$merchantId] = array();
-            }
-
-            $accounts[$merchantId][] = $accountItem;
-        }
-
-        return $accounts;
+        return $accountsCollection->getItems();
     }
 
     // ---------------------------------------
 
-    private function processAccounts(array $accounts)
+    private function isLockedAccount($accountId)
     {
-        $relatedChanges = array();
+        /** @var $lockItem Ess_M2ePro_Model_LockItem */
+        $lockItem = Mage::getModel('M2ePro/LockItem');
+        $lockItem->setNick(self::LOCK_ITEM_PREFIX.'_'.$accountId);
+        $lockItem->setMaxInactiveTime(Ess_M2ePro_Model_Processing_Request::MAX_LIFE_TIME_INTERVAL);
 
-        foreach ($accounts as $index => $account) {
+        return $lockItem->isExist();
+    }
 
-            $tempChanges = $this->getRelatedChanges($account);
-
-            if (empty($tempChanges)) {
-                unset($accounts[$index]);
-                continue;
-            }
-
-            $relatedChanges = array_merge($relatedChanges, $tempChanges);
-        }
-
-        if (empty($relatedChanges) || empty($accounts)) {
+    private function processAccount(Ess_M2ePro_Model_Account $account)
+    {
+        $relatedChanges = $this->getRelatedChanges($account);
+        if (empty($relatedChanges)) {
             return;
         }
 
@@ -171,8 +151,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Update
         /** @var $dispatcherObject Ess_M2ePro_Model_Connector_Amazon_Dispatcher */
         $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
         $connectorObj = $dispatcherObject->getConnector('orders', 'update', 'itemsRequester',
-                                                        array('accounts' => $accounts,
-                                                              'items' => $items));
+                                                        array('items' => $items), $account);
         $dispatcherObject->process($connectorObj);
     }
 
@@ -183,7 +162,6 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Orders_Update
         $changesCollection = Mage::getModel('M2ePro/Order_Change')->getCollection();
         $changesCollection->addAccountFilter($account->getId());
         $changesCollection->addProcessingAttemptDateFilter();
-        $changesCollection->addLockedObjectFilter('update_shipping_status');
         $changesCollection->addFieldToFilter('component', Ess_M2ePro_Helper_Component_Amazon::NICK);
         $changesCollection->addFieldToFilter('action', Ess_M2ePro_Model_Order_Change::ACTION_UPDATE_SHIPPING);
         $changesCollection->setPageSize(self::MAX_UPDATES_PER_TIME);

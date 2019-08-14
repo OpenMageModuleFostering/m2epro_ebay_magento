@@ -31,10 +31,6 @@ class Ess_M2ePro_Model_Buy_Listing_Product extends Ess_M2ePro_Model_Component_Ch
 
     //########################################
 
-    public function afterSaveNewEntity() {}
-
-    //########################################
-
     /**
      * @return Ess_M2ePro_Model_Account
      */

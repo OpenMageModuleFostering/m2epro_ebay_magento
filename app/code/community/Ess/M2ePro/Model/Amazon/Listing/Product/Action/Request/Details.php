@@ -103,19 +103,14 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Details
      */
     private function getConditionData()
     {
-        $condition = array();
-
         $this->searchNotFoundAttributes();
-        $condition['condition'] = $this->getAmazonListingProduct()->getListingSource()->getCondition();
-        $this->processNotFoundAttributes('Condition');
+        $conditionNote = $this->getAmazonListingProduct()->getListingSource()->getConditionNote();
+        $this->processNotFoundAttributes('Condition Note');
 
-        if ($condition['condition'] != Ess_M2ePro_Model_Amazon_Listing::CONDITION_NEW) {
-            $this->searchNotFoundAttributes();
-            $condition['condition_note'] = $this->getAmazonListingProduct()->getListingSource()->getConditionNote();
-            $this->processNotFoundAttributes('Condition Note');
-        }
-
-        return $condition;
+        return array(
+            'condition'      => $this->getAmazonListingProduct()->getListingSource()->getCondition(),
+            'condition_note' => $conditionNote,
+        );
     }
 
     /**

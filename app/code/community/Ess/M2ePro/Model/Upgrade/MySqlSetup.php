@@ -9,7 +9,6 @@
 class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
 {
     const LOCK_FILE_LIFETIME = 300;
-    const ERRORS_LOGFILE_NAME = 'm2epro_upgrade_errors.log';
 
     private $lockId;
     private $cache = array();
@@ -112,83 +111,6 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
 
     //########################################
 
-    /**
-     * Fix for invalid sort upgrade files that contains 4 digits in version (e.g. 6.3.9.1) bug
-     *
-     * @param string $actionType
-     * @param string $fromVersion
-     * @param string $toVersion
-     * @param array $arrFiles
-     * @return array
-     */
-    protected function _getModifySqlFiles($actionType, $fromVersion, $toVersion, $arrFiles)
-    {
-        // Magento ver. 1.5.1.0 doest not have the TYPE_DB_UPGRADE constant
-        $actionTypeUpgrade = 'upgrade';
-        if (defined('self::TYPE_DB_UPGRADE')) {
-            $actionTypeUpgrade = self::TYPE_DB_UPGRADE;
-        }
-
-        if ($actionType != $actionTypeUpgrade) {
-            return parent::_getModifySqlFiles($actionType, $fromVersion, $toVersion, $arrFiles);
-        }
-
-        $upgradeFiles = array();
-
-        foreach ($arrFiles as $versionInfo => $file) {
-            $versionsInterval = explode('-', $versionInfo);
-            if (count($versionsInterval) != 2) {
-                continue;
-            }
-
-            $fileVersionFrom = $versionsInterval[0];
-            $fileVersionTo   = $versionsInterval[1];
-
-            if (version_compare($fileVersionFrom, $fromVersion, '<') ||
-                version_compare($fileVersionTo, $toVersion, '>')
-            ) {
-                continue;
-            }
-
-            if (!isset($upgradeFiles[$fileVersionFrom])) {
-                $upgradeFiles[$fileVersionFrom] = array();
-            }
-
-            $upgradeFiles[$fileVersionFrom][$fileVersionTo] = $file;
-        }
-
-        uksort($upgradeFiles, function($first, $second) {
-            return version_compare($first, $second);
-        });
-
-        $maxToVersion = null;
-        $filesData = array();
-
-        foreach ($upgradeFiles as $fileVersionFrom => $fileData) {
-            uksort($fileData, function($first, $second) {
-                return version_compare($first, $second);
-            });
-
-            end($fileData);
-            $finalToVersion = key($fileData);
-
-            if (!is_null($maxToVersion) && version_compare($finalToVersion, $maxToVersion, '<=')) {
-                continue;
-            }
-
-            $maxToVersion = $finalToVersion;
-
-            $filesData[] = array(
-                'toVersion' => $finalToVersion,
-                'fileName'  => $fileData[$finalToVersion],
-            );
-        }
-
-        return $filesData;
-    }
-
-    //########################################
-
     public function run($sql)
     {
         if (trim($sql) == '') {
@@ -260,18 +182,14 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
 
     protected function _installResourceDb($newVersion)
     {
+        // double running protection
+        usleep(1000000); // 1 sec
+
         if ($this->isLocked()) {
             return;
         }
 
         $this->lock();
-
-        // double running protection
-        usleep(1000000); // 1 sec
-
-        if ($this->isLocked() && !$this->isLockOwner()) {
-            return;
-        }
 
         try {
 
@@ -286,8 +204,6 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
         } catch (Exception $e) {
 
             $this->unlock();
-            Mage::log($e->__toString(), null, self::ERRORS_LOGFILE_NAME, true);
-
             throw $e;
         }
 
@@ -296,18 +212,14 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
 
     protected function _upgradeResourceDb($oldVersion, $newVersion)
     {
+        // double running protection
+        usleep(1000000); // 1 sec
+
         if ($this->isLocked()) {
             return;
         }
 
         $this->lock();
-
-        // double running protection
-        usleep(1000000); // 1 sec
-
-        if ($this->isLocked() && !$this->isLockOwner()) {
-            return;
-        }
 
         try {
 
@@ -322,70 +234,6 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
         } catch (Exception $e) {
 
             $this->unlock();
-            Mage::log($e->__toString(), null, self::ERRORS_LOGFILE_NAME, true);
-
-            throw $e;
-        }
-
-        $this->unlock();
-    }
-
-    // ---------------------------------------
-
-    protected function _installData($newVersion)
-    {
-        if ($this->isLocked()) {
-            return;
-        }
-
-        $this->lock();
-
-        // double running protection
-        usleep(1000000); // 1 sec
-
-        if ($this->isLocked() && !$this->isLockOwner()) {
-            return;
-        }
-
-        try {
-
-            parent::_installData($newVersion);
-
-        } catch (Exception $e) {
-
-            $this->unlock();
-            Mage::log($e->__toString(), null, self::ERRORS_LOGFILE_NAME, true);
-
-            throw $e;
-        }
-
-        $this->unlock();
-    }
-
-    protected function _upgradeData($oldVersion, $newVersion)
-    {
-        if ($this->isLocked()) {
-            return;
-        }
-
-        $this->lock();
-
-        // double running protection
-        usleep(1000000); // 1 sec
-
-        if ($this->isLocked() && !$this->isLockOwner()) {
-            return;
-        }
-
-        try {
-
-            parent::_upgradeData($oldVersion, $newVersion);
-
-        } catch (Exception $e) {
-
-            $this->unlock();
-            Mage::log($e->__toString(), null, self::ERRORS_LOGFILE_NAME, true);
-
             throw $e;
         }
 
@@ -407,7 +255,8 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
         parent::endSetup();
         $this->afterFileExecution();
 
-        if ($this->isLockFileExists() && !$this->isLockOwner()) {
+        if ($this->isLockFileExists() &&
+            @file_get_contents($this->getLockFilePath()) != $this->lockId) {
             exit();
         }
 
@@ -531,11 +380,13 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
 
     private function lock()
     {
+        $this->lockId = $this->generateRandomHash();
+
         if (!@is_dir($this->getLocksDirPath())) {
             @mkdir($this->getLocksDirPath(), 0777, true);
         }
 
-        @file_put_contents($this->getLockFilePath(), $this->getLockId());
+        @file_put_contents($this->getLockFilePath(), $this->lockId);
 
         register_shutdown_function(function () {
             @unlink(Mage::getBaseDir('var').DS.'locks'.DS.'m2epro_setup.lock');
@@ -545,24 +396,6 @@ class Ess_M2ePro_Model_Upgrade_MySqlSetup extends Mage_Core_Model_Resource_Setup
     private function unlock()
     {
         $this->isLockFileExists() && @unlink($this->getLockFilePath());
-    }
-
-    private function getLockId()
-    {
-        if (is_null($this->lockId)) {
-            $this->lockId = $this->generateRandomHash();
-        }
-
-        return $this->lockId;
-    }
-
-    private function isLockOwner()
-    {
-        if (!$this->isLockFileExists()) {
-            return false;
-        }
-
-        return $this->getLockId() == @file_get_contents($this->getLockFilePath());
     }
 
     //########################################

@@ -13,8 +13,6 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
 
     protected $pageHelpLink = NULL;
 
-    protected $isUnAuthorized = false;
-
     //########################################
 
     public function indexAction()
@@ -45,7 +43,7 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
 
     //########################################
 
-    final public function preDispatch()
+    public function preDispatch()
     {
         parent::preDispatch();
 
@@ -59,50 +57,40 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
          * The code below is the logical extension of the method \Ess_M2ePro_Controller_Router::addModule.
          */
         // -----------------------------------------------------------------
-        if (!Mage::getSingleton('admin/session')->isLoggedIn()) {
+        if (!$this->getRequest()->isDispatched() &&
+            !Mage::getSingleton('admin/session')->isLoggedIn() &&
+            $this->getRequest()->getActionName() == 'login') {
 
-            $this->isUnAuthorized = true;
-
-            $this->setFlag('', self::FLAG_NO_DISPATCH, true);
-            $this->setFlag('', self::FLAG_NO_POST_DISPATCH, true);
-            $this->setFlag('', self::FLAG_NO_PRE_DISPATCH, true);
-
-            if ($this->getRequest()->isXmlHttpRequest()) {
-                exit(json_encode(array(
-                    'ajaxExpired'  => 1,
-                    'ajaxRedirect' => Mage::getBaseUrl()
-                )));
-            }
-
-            if (Mage::helper('M2ePro/Module')->isProductionEnvironment()) {
-                return $this->getResponse()->setRedirect(Mage::getBaseUrl());
-            }
+            return $this->_redirect('M2ePro/index/index/');
         }
         // -----------------------------------------------------------------
 
-        Mage::helper('M2ePro/Module_Exception')->setFatalErrorHandler();
+        // client was logged out
+        if ($this->getRequest()->isXmlHttpRequest() &&
+            !Mage::getSingleton('admin/session')->isLoggedIn()) {
 
-        // flag that controller is loaded
+            exit(json_encode(array(
+                'ajaxExpired' => 1,
+                'ajaxRedirect' => $this->_getRefererUrl()
+            )));
+        }
+
+        // flag controller loaded
         if (is_null(Mage::helper('M2ePro/Data_Global')->getValue('is_base_controller_loaded'))) {
             Mage::helper('M2ePro/Data_Global')->setValue('is_base_controller_loaded',true);
         }
 
-        $this->__preDispatch();
-
         return $this;
     }
 
-    final public function dispatch($action)
+    public function dispatch($action)
     {
         try {
 
+            Mage::helper('M2ePro/Module_Exception')->setFatalErrorHandler();
             parent::dispatch($action);
 
         } catch (Exception $exception) {
-
-            if ($this->isUnAuthorized) {
-                throw $exception;
-            }
 
             if ($this->getRequest()->getControllerName() ==
                 Mage::helper('M2ePro/Module_Support')->getPageControllerName()) {
@@ -137,27 +125,6 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
                 }
             }
         }
-    }
-
-    final public function postDispatch()
-    {
-        parent::postDispatch();
-
-        if ($this->isUnAuthorized) {
-            return;
-        }
-
-        $this->__postDispatch();
-    }
-
-    //########################################
-
-    protected function __preDispatch() {}
-
-    protected function __postDispatch()
-    {
-        // Removes garbage from the response's body
-        ob_get_clean();
     }
 
     //########################################

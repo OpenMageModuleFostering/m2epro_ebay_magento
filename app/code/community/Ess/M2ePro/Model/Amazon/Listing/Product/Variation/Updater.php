@@ -62,8 +62,9 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Updater
         }
 
         $listingProduct->setData('is_variation_product', 1);
-        $variationManager->setIndividualType();
-        $variationManager->getTypeModel()->resetProductVariation();
+        $variationManager->setRelationParentType();
+        $variationManager->getTypeModel()->resetProductAttributes(false);
+        $variationManager->getTypeModel()->getProcessor()->process();
 
         return true;
     }

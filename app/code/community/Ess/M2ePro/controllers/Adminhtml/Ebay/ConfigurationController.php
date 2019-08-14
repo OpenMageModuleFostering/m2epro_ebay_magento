@@ -208,14 +208,6 @@ class Ess_M2ePro_Adminhtml_Ebay_ConfigurationController extends Ess_M2ePro_Contr
 
         if ($motorsType == Ess_M2ePro_Helper_Component_Ebay_Motors::TYPE_KTYPE) {
 
-            if (strlen($csvRow['ktype']) > 10) {
-                return false;
-            }
-
-            if (!is_numeric($csvRow['ktype'])) {
-                return false;
-            }
-
             return array(
                 'ktype'      => (int)$csvRow['ktype'],
                 'make'       => (isset($csvRow['make']) ? $csvRow['make'] : null),
@@ -233,7 +225,7 @@ class Ess_M2ePro_Adminhtml_Ebay_ConfigurationController extends Ess_M2ePro_Contr
         $requiredColumns = array('epid','product_type','make','model','year');
         foreach ($requiredColumns as $columnName) {
 
-            if (!isset($csvRow[$columnName])) {
+            if (empty($csvRow[$columnName])) {
                 return false;
             }
         }

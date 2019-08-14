@@ -557,7 +557,11 @@ CommonAmazonListingProductSearchHandler = Class.create(ActionHandler, {
             height: 220,
             zIndex: 100,
             hideEffect: Element.hide,
-            showEffect: Element.show
+            showEffect: Element.show,
+            onClose: function() {
+                this.reloadSettings();
+                this.reloadVariationsGrid();
+            }.bind(this)
         });
         vocabularyAttributesPopUp.options.destroyOnClose = true;
 
@@ -609,7 +613,11 @@ CommonAmazonListingProductSearchHandler = Class.create(ActionHandler, {
             height: 220,
             zIndex: 100,
             hideEffect: Element.hide,
-            showEffect: Element.show
+            showEffect: Element.show,
+            onClose: function() {
+                this.reloadSettings();
+                this.reloadVariationsGrid();
+            }.bind(this)
         });
         vocabularyOptionsPopUp.options.destroyOnClose = true;
 

@@ -29,7 +29,7 @@ class Ess_M2ePro_Model_Connector_Ebay_OrderItem_Update_Status
 
     protected function getCommand()
     {
-        return array('orders', 'update', 'status');
+        return array('sales', 'update', 'status');
     }
 
     protected function isNeedSendRequest()

@@ -145,30 +145,25 @@ class Ess_M2ePro_Model_Ebay_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
 
         // Adding reference id into street array
         // ---------------------------------------
-        $referenceId = '';
-        $addressData['street'] = !empty($rawAddressData['street']) ? $rawAddressData['street'] : array();
-
         if ($this->order->isUseGlobalShippingProgram()) {
-            $details = $this->order->getGlobalShippingDetails();
-            isset($details['warehouse_address']['reference_id']) &&
-            $referenceId = 'Ref #'.$details['warehouse_address']['reference_id'];
+            $globalShippingDetails = $this->order->getGlobalShippingDetails();
+            $referenceId = 'Ref #'.$globalShippingDetails['warehouse_address']['reference_id'];
+        } else {
+            $clickAndCollectDetails = $this->order->getClickAndCollectDetails();
+            $referenceId = 'Ref #'.$clickAndCollectDetails['reference_id'];
         }
 
-        if ($this->order->isUseClickAndCollect()) {
-            $details = $this->order->getClickAndCollectDetails();
-            isset($details['reference_id']) && $referenceId = 'Ref #'.$details['reference_id'];
-        }
+        $streetParts = !empty($rawAddressData['street']) ? $rawAddressData['street'] : array();
 
-        if (!empty($referenceId)) {
-
-            if (count($addressData['street']) >= 2) {
-                $addressData['street'] = array(
-                    $referenceId,
-                    implode(' ', $addressData['street']),
-                );
-            } else {
-                array_unshift($addressData['street'], $referenceId);
-            }
+        $addressData['street'] = array();
+        if (count($streetParts) >= 2) {
+            $addressData['street'] = array(
+                $referenceId,
+                implode(' ', $streetParts),
+            );
+        } else {
+            array_unshift($streetParts, $referenceId);
+            $addressData['street'] = $streetParts;
         }
         // ---------------------------------------
 

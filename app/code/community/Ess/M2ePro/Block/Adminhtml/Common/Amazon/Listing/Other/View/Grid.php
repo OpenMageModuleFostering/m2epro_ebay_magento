@@ -123,7 +123,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Other_View_Grid extends M
             'filter_condition_callback' => array($this, 'callbackFilterPrice')
         );
 
-        if (Mage::helper('M2ePro/Component_Amazon_Repricing')->isEnabled()) {
+        if (Mage::helper('M2ePro/Component_Amazon')->isRepricingEnabled()) {
             $priceColumn['filter'] = 'M2ePro/adminhtml_common_amazon_grid_column_filter_price';
         }
 
@@ -281,7 +281,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Other_View_Grid extends M
         if (is_null($value)) {
             $value = '<i style="color:gray;">receiving...</i>';
         } else {
-            $value = '<span>' .Mage::helper('M2ePro')->escapeHtml($value). '</span>';
+            $value = '<span>' . Mage::helper('M2ePro')->escapeHtml($value) . '</span>';
         }
 
         $tempSku = $row->getData('sku');
@@ -341,33 +341,20 @@ HTML;
 
     public function callbackColumnPrice($value, $row, $column, $isExport)
     {
-        $html = '';
+        $html ='';
 
-        if (Mage::helper('M2ePro/Component_Amazon_Repricing')->isEnabled() &&
-            (int)$row->getData('is_repricing') == 1) {
-
-            $image = 'money';
+        if (Mage::helper('M2ePro/Component_Amazon')->isRepricingEnabled() &&
+            (int)$row->getData('is_repricing') === Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_YES) {
             $text = Mage::helper('M2ePro')->__(
-                'This Product is used by Amazon Repricing Tool, so its Price cannot be managed via M2E Pro. <br>
-                 <strong>Please note</strong> that the Price value(s) shown in the grid might
-                 be different from the actual one from Amazon. It is caused by the delay
-                 in the values updating made via the Repricing Service'
+                'This product is used by Amazon Repricing Tool.
+                 The Price cannot be updated through the M2E Pro.'
             );
 
-            if ((int)$row->getData('is_repricing_disabled') == 1) {
-                $image = 'money_disabled';
-                $text = Mage::helper('M2ePro')->__(
-                    'This product is disabled on Amazon Repricing Tool. <br>
-                    You can map it to Magento Product and Move into M2E Pro Listing to make the
-                    Price being updated via M2E Pro.'
-                );
-            }
-
             $html = <<<HTML
-<span style="float:right; text-align: left;">&nbsp;
+<span style="float:right; text-align: left;">
     <img class="tool-tip-image"
          style="vertical-align: middle; width: 16px;"
-         src="{$this->getSkinUrl('M2ePro/images/'.$image.'.png')}">
+         src="{$this->getSkinUrl('M2ePro/images/money.png')}">
     <span class="tool-tip-message tool-tip-message tip-left" style="display:none;">
         <img src="{$this->getSkinUrl('M2ePro/images/i_icon.png')}">
         <span>{$text}</span>
@@ -484,11 +471,11 @@ HTML;
             $where .= 'online_price <= ' . $value['to'];
         }
 
-        if (Mage::helper('M2ePro/Component_Amazon_Repricing')->isEnabled() && !empty($value['is_repricing'])) {
+        if (Mage::helper('M2ePro/Component_Amazon')->isRepricingEnabled() && !empty($value['is_repricing'])) {
             if (!empty($where)) {
                 $where = '(' . $where . ') OR ';
             }
-            $where .= 'is_repricing = 1';
+            $where .= 'is_repricing = ' . Ess_M2ePro_Model_Amazon_Listing_Product::IS_REPRICING_YES;
         }
 
         $collection->getSelect()->where($where);

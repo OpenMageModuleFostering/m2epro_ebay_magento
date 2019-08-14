@@ -258,13 +258,10 @@ JS;
     {
         return Mage::helper('M2ePro')->__(
             'No records found.
-             You can %link_new_item_start%add Custom Compatible Vehicles%link_new_item_end% manually
-             or through the %link_start%Import Tool%link_end%.',
-            '<a target="_blank" href="javascript::void(0)" onclick="EbayMotorsHandlerObj.openAddRecordPopup()">',
-            '</a>',
+             You can add Custom Compatible Vehicles manually or through the %link_start%Import Tool%link_end%.',
             '<a target="_blank" href="' .
-            $this->getUrl('*/adminhtml_ebay_configuration/index') .
-            '#magento_block_ebay_configuration_general_motors_epids">',
+                $this->getUrl('*/adminhtml_ebay_configuration/index') .
+                '#magento_block_ebay_configuration_general_motors_epids">',
             '</a>'
         );
     }

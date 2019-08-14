@@ -119,48 +119,33 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
     private function processEbayOrders($account)
     {
         $fromTime = $this->prepareFromTime($account);
-        $toTime = $this->prepareToDate();
-
-        if (strtotime($fromTime) >= strtotime($toTime)) {
-            $fromTime = new DateTime($toTime);
-            $fromTime->modify('- 5 minutes');
-
-            $fromTime = Ess_M2ePro_Model_Connector_Ebay_Abstract::ebayTimeToString($fromTime);
-        }
-
-        $params = array(
-            'from_update_date' => $fromTime,
-            'to_update_date'=> $toTime
-        );
-
-        $jobToken = $account->getData('job_token');
-        if (!empty($jobToken)) {
-            $params['job_token'] = $jobToken;
-        }
 
         $dispatcherObj = Mage::getModel('M2ePro/Connector_Ebay_Dispatcher');
-        $connectorObj = $dispatcherObj->getConnector('order', 'receive', 'items', $params, NULL, $account);
+        $connectorObj = $dispatcherObj->getConnector('order', 'receive', 'items',
+                                                            array('last_update' => $fromTime),
+                                                            NULL, $account);
 
         $response = $dispatcherObj->process($connectorObj);
         $this->processResponseMessages($connectorObj);
 
         $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'get'.$account->getId());
 
-        if (!isset($response['items']) || !isset($response['to_update_date'])) {
+        $ebayOrders = array();
+        $toTime = $fromTime;
+
+        if (isset($response['orders']) && isset($response['updated_to'])) {
+            $ebayOrders = $response['orders'];
+            $toTime = $response['updated_to'];
+        }
+
+        if (empty($ebayOrders)) {
+            $this->saveLastUpdateTime($account, $toTime);
             return array();
         }
 
-        $accountCreateDate = new DateTime($account->getData('create_date'), new DateTimeZone('UTC'));
-
         $orders = array();
 
-        foreach ($response['items'] as $ebayOrderData) {
-
-            $orderCreateDate = new DateTime($ebayOrderData['purchase_create_date'], new DateTimeZone('UTC'));
-            if ($orderCreateDate < $accountCreateDate) {
-                continue;
-            }
-
+        foreach ($ebayOrders as $ebayOrderData) {
             /** @var $ebayOrder Ess_M2ePro_Model_Ebay_Order_Builder */
             $ebayOrder = Mage::getModel('M2ePro/Ebay_Order_Builder');
             $ebayOrder->initialize($account, $ebayOrderData);
@@ -168,18 +153,7 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
             $orders[] = $ebayOrder->process();
         }
 
-        /** @var Ess_M2ePro_Model_Ebay_Account $ebayAccount */
-        $ebayAccount = $account->getChildObject();
-
-        if (!empty($response['job_token'])) {
-            $ebayAccount->setData('job_token', $response['job_token']);
-            $ebayAccount->setData('orders_last_synchronization', $response['to_update_date']);
-        } else {
-            $ebayAccount->setData('job_token', NULL);
-            $ebayAccount->setData('orders_last_synchronization', $response['to_update_date']);
-        }
-
-        $ebayAccount->save();
+        $this->saveLastUpdateTime($account, $toTime);
 
         return array_filter($orders);
     }
@@ -210,10 +184,6 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
 
         foreach ($ebayOrders as $order) {
             /** @var $order Ess_M2ePro_Model_Order */
-
-            if ($this->isOrderChangedInParallelProcess($order)) {
-                continue;
-            }
 
             if ($order->canCreateMagentoOrder()) {
                 try {
@@ -252,24 +222,6 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
         }
     }
 
-    /**
-     * This is going to protect from Magento Orders duplicates.
-     * (Is assuming that there may be a parallel process that has already created Magento Order)
-     *
-     * But this protection is not covering a cases when two parallel cron processes are isolated by mysql transactions
-     */
-    private function isOrderChangedInParallelProcess(Ess_M2ePro_Model_Order $order)
-    {
-        /** @var Ess_M2ePro_Model_Order $dbOrder */
-        $dbOrder = Mage::getModel('M2ePro/Order')->load($order->getId());
-
-        if ($dbOrder->getMagentoOrderId() != $order->getMagentoOrderId()) {
-            return true;
-        }
-
-        return false;
-    }
-
     //########################################
 
     private function prepareFromTime(Ess_M2ePro_Model_Account $account)
@@ -280,9 +232,7 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
             $sinceTime = new DateTime('now', new DateTimeZone('UTC'));
             $sinceTime = Ess_M2ePro_Model_Connector_Ebay_Abstract::ebayTimeToString($sinceTime);
 
-            /** @var Ess_M2ePro_Model_Ebay_Account $ebayAccount */
-            $ebayAccount = $account->getChildObject();
-            $ebayAccount->setData('orders_last_synchronization', $sinceTime)->save();
+            $this->saveLastUpdateTime($account, $sinceTime);
 
             return $sinceTime;
         }
@@ -305,17 +255,11 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Orders_Receive
         return Ess_M2ePro_Model_Connector_Ebay_Abstract::ebayTimeToString($sinceTime);
     }
 
-    private function prepareToDate()
+    private function saveLastUpdateTime(Ess_M2ePro_Model_Account $account, $lastUpdateTime)
     {
-        $operationHistory = $this->getActualOperationHistory()->getParentObject('synchronization');
-        if (!is_null($operationHistory)) {
-            $toDate = $operationHistory->getData('start_date');
-        } else {
-            $toDate = new DateTime('now', new DateTimeZone('UTC'));
-            $toDate = $toDate->format('Y-m-d H:i:s');
-        }
-
-        return Ess_M2ePro_Model_Connector_Ebay_Abstract::ebayTimeToString($toDate);
+        /** @var Ess_M2ePro_Model_Ebay_Account $ebayAccount */
+        $ebayAccount = $account->getChildObject();
+        $ebayAccount->setData('orders_last_synchronization', $lastUpdateTime)->save();
     }
 
     //########################################

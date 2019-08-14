@@ -85,10 +85,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Orders_Update_ItemsRequester
     protected function getRequestData()
     {
         if (!isset($this->params['items']) || !is_array($this->params['items'])) {
-            return array(
-                'accounts' => $this->getAccountsAccessTokens(),
-                'items' => array()
-            );
+            return array('items' => array());
         }
 
         $orders = array();
@@ -122,22 +119,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Orders_Update_ItemsRequester
             $orders[] = $order;
         }
 
-        return array(
-            'accounts' => $this->getAccountsAccessTokens(),
-            'items' => $orders
-        );
-    }
-
-    // ---------------------------------------
-
-    private function getAccountsAccessTokens()
-    {
-        $accountsAccessTokens = array();
-        foreach ($this->params['accounts'] as $account) {
-            $accountsAccessTokens[] = $account->getChildObject()->getServerHash();
-        }
-
-        return $accountsAccessTokens;
+        return array('items' => $orders);
     }
 
     //########################################

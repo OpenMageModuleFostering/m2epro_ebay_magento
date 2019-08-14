@@ -230,7 +230,6 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Variation extends Ess_M2ePro_Model_Co
         $calculator->setSource($src)->setProduct($this->getListingProduct());
         $calculator->setModifyByCoefficient(true)
                    ->setIsIncreaseByVatPercent(true);
-        $calculator->setPriceVariationMode($this->getBuySellingFormatTemplate()->getPriceVariationMode());
 
         return $calculator->getVariationValue($this->getParentObject());
     }
