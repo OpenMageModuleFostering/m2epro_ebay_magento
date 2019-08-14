@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/m2epro_ebay_magento",
+    "type": "magento-module",
+    "license": "m2epro_ebay_magento",
+    "homepage": "",
+    "description": "m2epro_ebay_magento",
+    "authors": [
+    {
+        "name": "m2epro_ebay_magento",
+        "email": "m2epro_ebay_magento@gg.net"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

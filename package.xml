@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package>
+    <name>m2epro_ebay_magento</name>
+    <version>1.0.2</version>
+    <stability>devel</stability>
+    <license>m2epro_ebay_magento</license>
+    <channel>community</channel>
+    <extends/>
+    <summary>m2epro_ebay_magento</summary>
+    <description>m2epro_ebay_magento</description>
+    <notes>m2epro_ebay_magento</notes>
+    <authors><author><name>m2epro_ebay_magento</name><user>m2epro_ebay_magento</user><email>m2epro_ebay_magento@gg.net</email></author></authors>
+    <date>2013-10-01</date>
+    <time>10:49:48</time>
+    <contents></contents>
+    <compatible/>
+    <dependencies><required><php><min>5.0.0</min><max>6.0.0</max></php></required></dependencies>
+</package>
