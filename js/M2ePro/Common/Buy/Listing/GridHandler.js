@@ -1,26 +1,26 @@
-BuyListingGridHandler = Class.create(CommonListingGridHandler, {
+CommonBuyListingGridHandler = Class.create(CommonListingGridHandler, {
 
-    //----------------------------------
+    // ---------------------------------------
 
     getComponent: function()
     {
         return 'buy';
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getMaxProductsInPart: function()
     {
         return 100;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     prepareActions: function($super)
     {
         $super();
         this.movingHandler = new ListingMovingHandler(this);
-        this.productSearchHandler = new BuyListingProductSearchHandler(this);
+        this.productSearchHandler = new CommonBuyListingProductSearchHandler(this);
 
         this.actions = Object.extend(this.actions, {
 
@@ -32,5 +32,5 @@ BuyListingGridHandler = Class.create(CommonListingGridHandler, {
         });
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

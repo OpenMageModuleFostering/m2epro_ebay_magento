@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 /** @method Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Relist_Response getResponseObject */
@@ -9,33 +11,46 @@
 class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
     extends Ess_M2ePro_Model_Connector_Ebay_OtherItem_Abstract
 {
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     protected function getCommand()
     {
         return array('item','update','relist');
     }
 
+    /**
+     * @return int
+     */
     protected function getLogsAction()
     {
         return Ess_M2ePro_Model_Listing_Other_Log::ACTION_RELIST_PRODUCT;
     }
 
+    /**
+     * @return int
+     */
     protected function getActionType()
     {
         return Ess_M2ePro_Model_Listing_Product::ACTION_RELIST;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     * @throws Ess_M2ePro_Model_Exception
+     */
     protected function filterManualListingOther()
     {
         if (!$this->otherListing->isRelistable()) {
 
             $message = array(
                 // M2ePro_TRANSLATIONS
-                // The Item either is listed or not available
-                parent::MESSAGE_TEXT_KEY => 'The Item either is listed or not available',
+                // The Item either is Listed or not available
+                parent::MESSAGE_TEXT_KEY => 'The Item either is Listed or not available',
                 parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_ERROR
             );
 
@@ -56,7 +71,7 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
         return $this->buildRequestDataObject($data)->getData();
     }
 
-    //----------------------------------------
+    // ---------------------------------------
 
     protected function prepareResponseData($response)
     {
@@ -84,8 +99,8 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
 
             $message = array(
                 // M2ePro_TRANSLATIONS
-                // Item was successfully relisted
-                parent::MESSAGE_TEXT_KEY => 'Item was successfully relisted',
+                // Item was successfully Relisted
+                parent::MESSAGE_TEXT_KEY => 'Item was successfully Relisted',
                 parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_SUCCESS
             );
         }
@@ -96,7 +111,17 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
         return $response;
     }
 
-    // ########################################
+    //########################################
+
+    protected function isResponseValid($response)
+    {
+        if (parent::isResponseValid($response)) {
+            return true;
+        }
+
+        $this->processAsPotentialDuplicate();
+        return false;
+    }
 
     protected function processResponseInfo($responseInfo)
     {
@@ -118,7 +143,7 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
         $this->getResponseObject()->markAsPotentialDuplicate();
 
         $message = array(
-            parent::MESSAGE_TEXT_KEY => 'An error occured while listing the Item. '.
+            parent::MESSAGE_TEXT_KEY => 'An error occured while Listing the Item. '.
                                 'The Item has been blocked. The next M2E Pro Synchronization will resolve the problem.',
             parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_WARNING
         );
@@ -126,5 +151,5 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Relist_Single
         $this->getLogger()->logListingOtherMessage($this->otherListing, $message);
     }
 
-    // ########################################
+    //########################################
 }

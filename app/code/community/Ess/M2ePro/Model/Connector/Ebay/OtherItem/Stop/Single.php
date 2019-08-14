@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 /** @method Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Stop_Response getResponseObject */
@@ -9,7 +11,7 @@
 class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
     extends Ess_M2ePro_Model_Connector_Ebay_OtherItem_Abstract
 {
-    // ########################################
+    //########################################
 
     protected function getCommand()
     {
@@ -26,7 +28,7 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
         return Ess_M2ePro_Model_Listing_Product::ACTION_STOP;
     }
 
-    // ########################################
+    //########################################
 
     protected function filterManualListingOther()
     {
@@ -34,8 +36,8 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
 
             $message = array(
                 // M2ePro_TRANSLATIONS
-                // Item is not listed or not available
-                parent::MESSAGE_TEXT_KEY => 'Item is not listed or not available',
+                // Item is not Listed or not available
+                parent::MESSAGE_TEXT_KEY => 'Item is not Listed or not available',
                 parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_ERROR
             );
 
@@ -56,7 +58,7 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
         return $this->buildRequestDataObject($data)->getData();
     }
 
-    //----------------------------------------
+    // ---------------------------------------
 
     protected function prepareResponseData($response)
     {
@@ -70,8 +72,8 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
 
             $message = array(
                 // M2ePro_TRANSLATIONS
-                // Item was already stopped on eBay
-                parent::MESSAGE_TEXT_KEY => 'Item was already stopped on eBay',
+                // Item was already Stopped on eBay
+                parent::MESSAGE_TEXT_KEY => 'Item was already Stopped on eBay',
                 parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_ERROR
             );
 
@@ -81,8 +83,8 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
 
             $message = array(
                 // M2ePro_TRANSLATIONS
-                // Item was successfully stopped
-                parent::MESSAGE_TEXT_KEY => 'Item was successfully stopped',
+                // Item was successfully Stopped
+                parent::MESSAGE_TEXT_KEY => 'Item was successfully Stopped',
                 parent::MESSAGE_TYPE_KEY => parent::MESSAGE_TYPE_SUCCESS
             );
         }
@@ -93,5 +95,5 @@ class Ess_M2ePro_Model_Connector_Ebay_OtherItem_Stop_Single
         return $response;
     }
 
-    // ########################################
+    //########################################
 }

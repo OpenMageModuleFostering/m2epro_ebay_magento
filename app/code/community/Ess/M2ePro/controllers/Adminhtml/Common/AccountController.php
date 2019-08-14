@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Common_AccountController
     extends Ess_M2ePro_Controller_Adminhtml_Common_MainController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -18,21 +20,27 @@ class Ess_M2ePro_Adminhtml_Common_AccountController
         $this->getLayout()->getBlock('head')->addJs('M2ePro/Plugin/DropDown.js')
                                             ->addCss('M2ePro/css/Plugin/DropDown.css');
 
+        $this->setComponentPageHelpLink('Accounts');
+
         return $this;
     }
 
     protected function _isAllowed()
     {
-        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/configuration/account');
+        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/configuration');
     }
 
-    //#############################################
+    //########################################
 
     public function indexAction()
     {
         $this->_initAction()
-             ->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_account'))
-             ->renderLayout();
+            ->_addContent(
+                $this->getLayout()->createBlock(
+                    'M2ePro/adminhtml_common_configuration', '',
+                    array('active_tab' => Ess_M2ePro_Block_Adminhtml_Common_Configuration_Tabs::TAB_ID_ACCOUNT)
+                )
+            )->renderLayout();
     }
 
     public function editAction()
@@ -48,7 +56,7 @@ class Ess_M2ePro_Adminhtml_Common_AccountController
         $this->getResponse()->setBody($response);
     }
 
-    //#############################################
+    //########################################
 
     public function deleteAction()
     {
@@ -78,41 +86,44 @@ class Ess_M2ePro_Adminhtml_Common_AccountController
 
             if ($account->isLocked(true)) {
                 $locked++;
-            } else {
+                continue;
+            }
 
-                try {
+            try {
 
-                    if ($account->isComponentModeAmazon()) {
+                $dispatcherObject = null;
 
-                        $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
-                        $dispatcherObject->processConnector('account', 'delete' ,'entityRequester', array(), $account);
+                if ($account->isComponentModeAmazon()) {
 
-                    } else if ($account->isComponentModeBuy()) {
+                    $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
 
-                        $dispatcherObject = Mage::getModel('M2ePro/Connector_Buy_Dispatcher');
-                        $dispatcherObject->processConnector('account', 'delete' ,'entityRequester', array(), $account);
+                } else if ($account->isComponentModeBuy()) {
 
-                    } else if ($account->isComponentModePlay()) {
+                    $dispatcherObject = Mage::getModel('M2ePro/Connector_Buy_Dispatcher');
 
-                        $dispatcherObject = Mage::getModel('M2ePro/Connector_Play_Dispatcher');
-                        $dispatcherObject->processConnector('account', 'delete' ,'entityRequester', array(), $account);
-                    }
-
-                } catch (Exception $e) {
-
-                    $account->deleteProcessingRequests();
-                    $account->deleteObjectLocks();
-                    $account->deleteInstance();
-
-                    throw $e;
                 }
+
+                if ($dispatcherObject) {
+
+                    $connectorObj = $dispatcherObject->getConnector('account','delete','entityRequester',
+                                                                    array(), $account);
+                    $dispatcherObject->process($connectorObj);
+                }
+
+            } catch (Exception $e) {
 
                 $account->deleteProcessingRequests();
                 $account->deleteObjectLocks();
                 $account->deleteInstance();
 
-                $deleted++;
+                throw $e;
             }
+
+            $account->deleteProcessingRequests();
+            $account->deleteObjectLocks();
+            $account->deleteInstance();
+
+            $deleted++;
         }
 
         $tempString = Mage::helper('M2ePro')->__('%amount% record(s) were successfully deleted.', $deleted);
@@ -125,5 +136,5 @@ class Ess_M2ePro_Adminhtml_Common_AccountController
         $this->_redirect('*/*/index');
     }
 
-    //#############################################
+    //########################################
 }

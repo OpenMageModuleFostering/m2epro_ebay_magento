@@ -1,8 +1,11 @@
 <div id="block_notice_ebay_listing_other_synchronization_stop" class="block_notices_module" title="<?php echo Mage::helper('M2ePro')->__('Stop Rules'); ?>">
-    <?php echo Mage::helper('M2ePro')->__('Define the conditions when you want eBay Items stopped.
+    <?php echo Mage::helper('M2ePro')->__('Define the Conditions when you want eBay Items Stopped.
     <br/><br/>
-    <b>Note:</b> If all options are set to No or No Action, then the stop action is disabled.<br/>
-If all options are enabled, then an Item will be stopped if at least one of the Stop Conditions is met.'); ?>
+    <b>Note:</b> If all Options are set to No or No Action, then the Stop Action is disabled.<br/>
+        If all Options are enabled, then an Item will be Stopped if at least one of the Stop Conditions is met.<br/><br/>
+        More detailed information about ability to work with this Page you can find <a href="%url%" target="_blank">here</a>.',
+        Mage::helper('M2ePro/Module_Support')->getDocumentationUrl(NULL, NULL, 'x/DAAJAQ')
+    ); ?>
 </div>
 
 <?php
@@ -44,7 +47,7 @@ If all options are enabled, then an Item will be stopped if at least one of the 
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Status Disabled'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Status Disabled'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="stop_status_disabled" name="stop_status_disabled" class="required-entry">
@@ -52,14 +55,14 @@ If all options are enabled, then an Item will be stopped if at least one of the 
                             <option value="<?php echo Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_OUT_OFF_STOCK_YES; ?>" <?php if ($formData['stop_status_disabled'] == Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_STATUS_DISABLED_YES): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Yes'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay listing if its status is changed to \'Disabled\' in Magento.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay Listing if its status is changed to \'Disabled\' in Magento.'); ?></span>
                         </p>
                     </td>
                 </tr>
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Out Of Stock'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Out Of Stock'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="stop_out_off_stock" name="stop_out_off_stock" class="required-entry">
@@ -67,14 +70,14 @@ If all options are enabled, then an Item will be stopped if at least one of the 
                             <option value="<?php echo Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_OUT_OFF_STOCK_YES; ?>" <?php if ($formData['stop_out_off_stock'] == Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_OUT_OFF_STOCK_YES): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Yes'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay listing if its stock availability is changed to \'Out Of Stock\' in Magento.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay Listing if its Stock availability is changed to \'Out Of Stock\' in Magento.'); ?></span>
                         </p>
                     </td>
                 </tr>
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Item Quantity Is'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Stop When Item Quantity Is'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="stop_qty" name="stop_qty" class="required-entry">
@@ -84,7 +87,7 @@ If all options are enabled, then an Item will be stopped if at least one of the 
                             <option value="<?php echo Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_QTY_BETWEEN; ?>" <?php if ($formData['stop_qty'] == Ess_M2ePro_Model_Ebay_Listing_Other_Synchronization::STOP_QTY_BETWEEN): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Between'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay listing if its Magento Quantity is changed and meets the conditions.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Automatically stops eBay Listing if its Magento Quantity is changed and meets the Conditions.'); ?></span>
                         </p>
                     </td>
                 </tr>

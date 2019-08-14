@@ -1,16 +1,16 @@
 EbayTemplateEditHandler = Class.create(CommonHandler, {
 
-    //----------------------------------
+    // ---------------------------------------
 
     templateNick: null,
 
     showConfirmMsg: true,
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function()
     {
-        Validation.add('validate-title-uniqueness', M2ePro.translator.translate('Policy title is not unique.'), function(value, el) {
+        Validation.add('validate-title-uniqueness', M2ePro.translator.translate('Policy Title is not unique.'), function(value, el) {
 
             var unique = false;
 
@@ -31,7 +31,7 @@ EbayTemplateEditHandler = Class.create(CommonHandler, {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     loadTemplateData: function()
     {
@@ -53,7 +53,13 @@ EbayTemplateEditHandler = Class.create(CommonHandler, {
                     $('edit_form').appendChild(editFormData);
                 }
 
-                editFormData.update(transport.responseText);
+                editFormData.innerHTML = transport.responseText;
+                editFormData.innerHTML.extractScripts()
+                    .map(function(script) {
+                        try {
+                            eval(script);
+                        } catch(e) {}
+                    });
 
                 var titleInput = $$('input[name="'+this.templateNick+'[title]"]')[0];
                 var marketplaceIdInput = $$('input[name="'+this.templateNick+'[marketplace_id]"]')[0];
@@ -69,7 +75,7 @@ EbayTemplateEditHandler = Class.create(CommonHandler, {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     validateForm: function()
     {
@@ -91,7 +97,7 @@ EbayTemplateEditHandler = Class.create(CommonHandler, {
         return validationResult;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     confirm: function(templateNick, confirmText, okCallback)
     {
@@ -181,5 +187,5 @@ EbayTemplateEditHandler = Class.create(CommonHandler, {
         $super(headId, chapter_when_duplicate_text);
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

@@ -1,13 +1,13 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Magento_Quote_Item
 {
-    // ########################################
-
     /** @var Mage_Sales_Model_Quote */
     private $quote = NULL;
 
@@ -20,7 +20,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
     /** @var Mage_GiftMessage_Model_Message */
     private $giftMessage = NULL;
 
-    // ########################################
+    //########################################
 
     public function init(Mage_Sales_Model_Quote $quote, Ess_M2ePro_Model_Order_Item_Proxy $proxyItem)
     {
@@ -30,8 +30,12 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $this;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return Mage_Catalog_Model_Product|null
+     * @throws Ess_M2ePro_Model_Exception
+     */
     public function getProduct()
     {
         if (!is_null($this->product)) {
@@ -42,7 +46,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
             $this->product = $this->getAssociatedGroupedProduct();
 
             if (is_null($this->product)) {
-                throw new Exception('There is no associated Products found for Grouped Product.');
+                throw new Ess_M2ePro_Model_Exception('There is no associated Products found for Grouped Product.');
             }
         } else {
             $this->product = $this->proxyItem->getProduct();
@@ -58,7 +62,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $this->product;
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     private function getAssociatedGroupedProduct()
     {
@@ -72,7 +76,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $product->getId() ? $product : null;
     }
 
-    // ########################################
+    //########################################
 
     private function getProductTaxClassId()
     {
@@ -100,7 +104,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         }
 
         // Create tax rule according to channel tax rate
-        // -------------------------
+        // ---------------------------------------
         /** @var $taxRuleBuilder Ess_M2ePro_Model_Magento_Tax_Rule_Builder */
         $taxRuleBuilder = Mage::getModel('M2ePro/Magento_Tax_Rule_Builder');
         $taxRuleBuilder->buildTaxRule(
@@ -111,7 +115,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
 
         $taxRule = $taxRuleBuilder->getRule();
         $productTaxClasses = $taxRule->getProductTaxClasses();
-        // -------------------------
+        // ---------------------------------------
 
         return array_shift($productTaxClasses);
     }
@@ -132,7 +136,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $taxCalculator->getRate($request);
     }
 
-    // ########################################
+    //########################################
 
     public function getRequest()
     {
@@ -164,7 +168,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $request;
     }
 
-    // ########################################
+    //########################################
 
     public function getGiftMessageId()
     {
@@ -198,7 +202,7 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return $this->giftMessage;
     }
 
-    // ########################################
+    //########################################
 
     public function getAdditionalData(Mage_Sales_Model_Quote_Item $quoteItem)
     {
@@ -210,5 +214,5 @@ class Ess_M2ePro_Model_Magento_Quote_Item
         return serialize(array_merge((array)$existAdditionalData, $additionalData));
     }
 
-    // ########################################
+    //########################################
 }

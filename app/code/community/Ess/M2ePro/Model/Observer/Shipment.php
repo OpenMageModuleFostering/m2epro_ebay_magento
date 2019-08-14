@@ -1,23 +1,30 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstract
 {
-    //####################################
+    //########################################
 
     public function process()
     {
         if (Mage::helper('M2ePro/Data_Global')->getValue('skip_shipment_observer')) {
-            // Not process invoice observer when set such flag
             Mage::helper('M2ePro/Data_Global')->unsetValue('skip_shipment_observer');
             return;
         }
 
         /** @var $shipment Mage_Sales_Model_Order_Shipment */
         $shipment = $this->getEvent()->getShipment();
+
+        if ($shipment->getData('is_already_processed_by_m2epro')) {
+            return;
+        }
+        $shipment->setData('is_already_processed_by_m2epro', true);
+
         $magentoOrderId = $shipment->getOrderId();
 
         try {
@@ -36,8 +43,7 @@ class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstr
             return;
         }
 
-        Mage::getSingleton('M2ePro/Order_Log_Manager')
-            ->setInitiator(Ess_M2ePro_Helper_Data::INITIATOR_EXTENSION);
+        $order->getLog()->setInitiator(Ess_M2ePro_Helper_Data::INITIATOR_EXTENSION);
 
         /** @var $shipmentHandler Ess_M2ePro_Model_Order_Shipment_Handler */
         $shipmentHandler = Mage::getModel('M2ePro/Order_Shipment_Handler')->factory($order->getComponentMode());
@@ -53,7 +59,7 @@ class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstr
         }
     }
 
-    //####################################
+    //########################################
 
     private function addSessionSuccessMessage(Ess_M2ePro_Model_Order $order)
     {
@@ -68,9 +74,6 @@ class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstr
                 break;
             case Ess_M2ePro_Helper_Component_Buy::NICK:
                 $message = Mage::helper('M2ePro')->__('Updating Rakuten.com Order Status to Shipped in Progress...');
-                break;
-            case Ess_M2ePro_Helper_Component_Play::NICK:
-                $message = Mage::helper('M2ePro')->__('Updating Play.com Order Status to Shipped in Progress...');
                 break;
         }
 
@@ -91,10 +94,10 @@ class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstr
 
         $chanelTitle = $order->getComponentTitle();
         // M2ePro_TRANSLATIONS
-        // Shipping Status for %chanel_title% Order was not updated. View <a href="%url%" target="_blank" >order log</a> for more details.
+        // Shipping Status for %chanel_title% Order was not updated. View <a href="%url%" target="_blank" >Order Log</a> for more details.
         $message = Mage::helper('M2ePro')->__(
             'Shipping Status for %chanel_title% Order was not updated.'.
-            ' View <a href="%url% target="_blank" >order log</a>'.
+            ' View <a href="%url% target="_blank" >Order Log</a>'.
             ' for more details.',
             $chanelTitle, $url
         );
@@ -102,5 +105,5 @@ class Ess_M2ePro_Model_Observer_Shipment extends Ess_M2ePro_Model_Observer_Abstr
         Mage::getSingleton('adminhtml/session')->addError($message);
     }
 
-    //####################################
+    //########################################
 }

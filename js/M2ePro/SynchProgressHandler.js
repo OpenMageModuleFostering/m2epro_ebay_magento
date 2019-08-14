@@ -1,7 +1,7 @@
 SynchProgressHandler = Class.create();
 SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function(progressBarObj, wrapperObj)
     {
@@ -17,7 +17,7 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
         this.loadingMask = $('loading-mask');
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     start: function(title, status)
     {
@@ -52,7 +52,7 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
         self.loadingMask.setStyle({visibility: 'visible'});
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     initPageCheckState: function(callBackWhenEnd)
     {
@@ -88,7 +88,7 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     runTask: function(title, url, components, callBackWhenEnd)
     {
@@ -136,7 +136,7 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     startGetExecutingInfo: function(callBackWhenEnd)
     {
@@ -173,7 +173,7 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
 
                     self.progressBarObj.setPercents(100,0);
 
-                    //-----------------
+                    // ---------------------------------------
                     setTimeout(function() {
 
                         if (callBackWhenEnd != '') {
@@ -191,13 +191,13 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
                             });
                         }
                     },1500);
-                    //-----------------
+                    // ---------------------------------------
                 }
             }
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     printFinalMessage: function(resultType)
     {
@@ -206,20 +206,20 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
             MagentoMessageObj.addError(str_replace(
                 '%url%',
                 M2ePro.url.get('logViewUrl'),
-                M2ePro.translator.translate('Synchronization ended with errors. <a target="_blank" href="%url%">View log</a> for details.')
+                M2ePro.translator.translate('Synchronization ended with errors. <a target="_blank" href="%url%">View Log</a> for details.')
             ));
         } else if (resultType == self.resultTypeWarning) {
             MagentoMessageObj.addWarning(str_replace(
                 '%url%',
                 M2ePro.url.get('logViewUrl'),
-                M2ePro.translator.translate('Synchronization ended with warnings. <a target="_blank" href="%url%">View log</a> for details.')
+                M2ePro.translator.translate('Synchronization ended with warnings. <a target="_blank" href="%url%">View Log</a> for details.')
             ));
         } else {
             MagentoMessageObj.addSuccess(M2ePro.translator.translate('Synchronization has successfully ended.'));
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     addProcessingNowWarning: function()
     {
@@ -241,5 +241,5 @@ SynchProgressHandler.prototype = Object.extend(new CommonHandler(), {
         });
 }
 
-    //----------------------------------
+    // ---------------------------------------
 });

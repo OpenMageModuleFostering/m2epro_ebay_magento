@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 /**
@@ -21,13 +23,13 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
     const STATUS_CANCELED            = 5;
     const STATUS_INVOICE_UNCONFIRMED = 6;
 
-    // ########################################
+    //########################################
 
     private $subTotalPrice = NULL;
 
     private $grandTotalPrice = NULL;
 
-    // ########################################
+    //########################################
 
     public function _construct()
     {
@@ -35,14 +37,14 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         $this->_init('M2ePro/Amazon_Order');
     }
 
-    // ########################################
+    //########################################
 
     public function getProxy()
     {
         return Mage::getModel('M2ePro/Amazon_Order_Proxy', $this);
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Amazon_Account
@@ -52,7 +54,7 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $this->getParentObject()->getAccount()->getChildObject();
     }
 
-    // ########################################
+    //########################################
 
     public function getAmazonOrderId()
     {
@@ -69,6 +71,9 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $this->getData('buyer_email');
     }
 
+    /**
+     * @return int
+     */
     public function getStatus()
     {
         return (int)$this->getData('status');
@@ -84,6 +89,9 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $this->getData('shipping_service');
     }
 
+    /**
+     * @return float
+     */
     public function getShippingPrice()
     {
         return (float)$this->getData('shipping_price');
@@ -100,36 +108,91 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
             ->setData($address);
     }
 
+    /**
+     * @return array
+     */
+    public function getMerchantFulfillmentData()
+    {
+        return $this->getSettings('merchant_fulfillment_data');
+    }
+
+    //########################################
+
+    public function getShipDateFrom()
+    {
+        $shippingDates = $this->getSettings('shipping_dates');
+        return !empty($shippingDates['ship']['from']) ? $shippingDates['ship']['from'] : NULL;
+    }
+
+    public function getShipDateTo()
+    {
+        $shippingDates = $this->getSettings('shipping_dates');
+        return !empty($shippingDates['ship']['to']) ? $shippingDates['ship']['to'] : NULL;
+    }
+
+    public function getDeliveryDateFrom()
+    {
+        $shippingDates = $this->getSettings('shipping_dates');
+        return !empty($shippingDates['delivery']['from']) ? $shippingDates['delivery']['from'] : NULL;
+    }
+
+    public function getDeliveryDateTo()
+    {
+        $shippingDates = $this->getSettings('shipping_dates');
+        return !empty($shippingDates['delivery']['to']) ? $shippingDates['delivery']['to'] : NULL;
+    }
+
+    //########################################
+
+    /**
+     * @return float
+     */
     public function getPaidAmount()
     {
         return (float)$this->getData('paid_amount');
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
     public function getTaxDetails()
     {
         return $this->getSettings('tax_details');
     }
 
+    /**
+     * @return float
+     */
     public function getProductPriceTaxAmount()
     {
         $taxDetails = $this->getTaxDetails();
         return !empty($taxDetails['product']) ? (float)$taxDetails['product'] : 0.0;
     }
 
+    /**
+     * @return float
+     */
     public function getShippingPriceTaxAmount()
     {
         $taxDetails = $this->getTaxDetails();
         return !empty($taxDetails['shipping']) ? (float)$taxDetails['shipping'] : 0.0;
     }
 
+    /**
+     * @return float
+     */
     public function getGiftPriceTaxAmount()
     {
         $taxDetails = $this->getTaxDetails();
         return !empty($taxDetails['gift']) ? (float)$taxDetails['gift'] : 0.0;
     }
 
+    /**
+     * @return float|int
+     */
     public function getProductPriceTaxRate()
     {
         $taxAmount = $this->getProductPriceTaxAmount() + $this->getGiftPriceTaxAmount();
@@ -137,11 +200,14 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
             return 0;
         }
 
-        $taxRate = ($taxAmount / $this->getSubtotalPrice()) * 100;
+        $taxRate = ($taxAmount / ($this->getSubtotalPrice() - $this->getPromotionDiscountAmount())) * 100;
 
         return round($taxRate, 4);
     }
 
+    /**
+     * @return float|int
+     */
     public function getShippingPriceTaxRate()
     {
         $taxAmount = $this->getShippingPriceTaxAmount();
@@ -149,76 +215,153 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
             return 0;
         }
 
-        $taxRate = ($taxAmount / $this->getShippingPrice()) * 100;
+        $taxRate = ($taxAmount / ($this->getShippingPrice() - $this->getShippingDiscountAmount())) * 100;
 
         return round($taxRate, 4);
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
     public function getDiscountDetails()
     {
         return $this->getSettings('discount_details');
     }
 
+    /**
+     * @return float
+     */
     public function getPromotionDiscountAmount()
     {
         $discountDetails = $this->getDiscountDetails();
         return !empty($discountDetails['promotion']) ? $discountDetails['promotion'] : 0.0;
     }
 
+    /**
+     * @return float
+     */
     public function getShippingDiscountAmount()
     {
         $discountDetails = $this->getDiscountDetails();
         return !empty($discountDetails['shipping']) ? $discountDetails['shipping'] : 0.0;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function isFulfilledByAmazon()
     {
         return (bool)$this->getData('is_afn_channel');
     }
 
-    // ########################################
+    //########################################
 
+    public function isEligibleForMerchantFulfillment()
+    {
+        if ($this->isFulfilledByAmazon()) {
+            return false;
+        }
+
+        if ($this->isPending() || $this->isCanceled()) {
+            return false;
+        }
+
+        /** @var Ess_M2ePro_Model_Amazon_Marketplace $amazonMarketplace */
+        $amazonMarketplace = $this->getAmazonAccount()->getMarketplace()->getChildObject();
+        if (!$amazonMarketplace->isMerchantFulfillmentAvailable()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMerchantFulfillmentApplied()
+    {
+        $info = $this->getMerchantFulfillmentData();
+        return !empty($info);
+    }
+
+    //########################################
+
+    /**
+     * @return bool
+     */
+    public function isPrime()
+    {
+        return (bool)$this->getData('is_prime');
+    }
+
+    //########################################
+
+    /**
+     * @return bool
+     */
     public function isPending()
     {
         return $this->getStatus() == self::STATUS_PENDING;
     }
 
+    /**
+     * @return bool
+     */
     public function isUnshipped()
     {
         return $this->getStatus() == self::STATUS_UNSHIPPED;
     }
 
+    /**
+     * @return bool
+     */
     public function isPartiallyShipped()
     {
         return $this->getStatus() == self::STATUS_SHIPPED_PARTIALLY;
     }
 
+    /**
+     * @return bool
+     */
     public function isShipped()
     {
         return $this->getStatus() == self::STATUS_SHIPPED;
     }
 
+    /**
+     * @return bool
+     */
     public function isUnfulfillable()
     {
         return $this->getStatus() == self::STATUS_UNFULFILLABLE;
     }
 
+    /**
+     * @return bool
+     */
     public function isCanceled()
     {
         return $this->getStatus() == self::STATUS_CANCELED;
     }
 
+    /**
+     * @return bool
+     */
     public function isInvoiceUnconfirmed()
     {
         return $this->getStatus() == self::STATUS_INVOICE_UNCONFIRMED;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return float|null
+     */
     public function getSubtotalPrice()
     {
         if (is_null($this->subTotalPrice)) {
@@ -228,6 +371,9 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $this->subTotalPrice;
     }
 
+    /**
+     * @return float
+     */
     public function getGrandTotalPrice()
     {
         if (is_null($this->grandTotalPrice)) {
@@ -242,7 +388,7 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return round($this->grandTotalPrice, 2);
     }
 
-    // ########################################
+    //########################################
 
     public function getStatusForMagentoOrder()
     {
@@ -254,8 +400,11 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $status;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return int|null
+     */
     public function getAssociatedStoreId()
     {
         $storeId = NULL;
@@ -264,19 +413,19 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
 
         if (count($channelItems) == 0) {
             // 3rd party order
-            // ---------------
+            // ---------------------------------------
             $storeId = $this->getAmazonAccount()->getMagentoOrdersListingsOtherStoreId();
-            // ---------------
+            // ---------------------------------------
         } else {
-            // M2E order
-            // ---------------
+            // M2E Pro order
+            // ---------------------------------------
             if ($this->getAmazonAccount()->isMagentoOrdersListingsStoreCustom()) {
                 $storeId = $this->getAmazonAccount()->getMagentoOrdersListingsStoreId();
             } else {
                 $firstChannelItem = reset($channelItems);
                 $storeId = $firstChannelItem->getStoreId();
             }
-            // ---------------
+            // ---------------------------------------
         }
 
         if ($storeId == 0) {
@@ -286,22 +435,28 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $storeId;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function isReservable()
     {
         if ($this->isCanceled()) {
             return false;
         }
 
-        if ($this->isFulfilledByAmazon() && !$this->getAmazonAccount()->isMagentoOrdersFbaModeEnabled()) {
+        if ($this->isFulfilledByAmazon() &&
+            (!$this->getAmazonAccount()->isMagentoOrdersFbaModeEnabled() ||
+             !$this->getAmazonAccount()->isMagentoOrdersFbaStockEnabled())
+        ) {
             return false;
         }
 
         return true;
     }
 
-    // ########################################
+    //########################################
 
     /**
      * Check possibility for magento order creation
@@ -324,14 +479,19 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
     public function beforeCreateMagentoOrder()
     {
         if ($this->isPending() || $this->isCanceled()) {
-            throw new Exception('Magento Order creation is not allowed for pending and canceled Amazon Orders.');
+            throw new Ess_M2ePro_Model_Exception('Magento Order Creation is not allowed for pending and
+                canceled Amazon Orders.');
         }
     }
 
     public function afterCreateMagentoOrder()
     {
         if ($this->getAmazonAccount()->isMagentoOrdersCustomerNewNotifyWhenOrderCreated()) {
-            $this->getParentObject()->getMagentoOrder()->sendNewOrderEmail();
+            if (method_exists($this->getParentObject()->getMagentoOrder(), 'queueNewOrderEmail')) {
+                $this->getParentObject()->getMagentoOrder()->queueNewOrderEmail(false);
+            } else {
+                $this->getParentObject()->getMagentoOrder()->sendNewOrderEmail();
+            }
         }
 
         if ($this->isFulfilledByAmazon() && !$this->getAmazonAccount()->isMagentoOrdersFbaStockEnabled()) {
@@ -341,8 +501,11 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         }
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function canCreateInvoice()
     {
         if (!$this->getAmazonAccount()->isMagentoOrdersInvoiceEnabled()) {
@@ -365,8 +528,12 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return true;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return Mage_Sales_Model_Order_Invoice|null
+     * @throws Exception
+     */
     public function createInvoice()
     {
         if (!$this->canCreateInvoice()) {
@@ -376,12 +543,12 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         $magentoOrder = $this->getParentObject()->getMagentoOrder();
 
         // Create invoice
-        // -------------
+        // ---------------------------------------
         /** @var $invoiceBuilder Ess_M2ePro_Model_Magento_Order_Invoice */
         $invoiceBuilder = Mage::getModel('M2ePro/Magento_Order_Invoice');
         $invoiceBuilder->setMagentoOrder($magentoOrder);
         $invoiceBuilder->buildInvoice();
-        // -------------
+        // ---------------------------------------
 
         $invoice = $invoiceBuilder->getInvoice();
 
@@ -392,8 +559,11 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return $invoice;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function canCreateShipment()
     {
         if (!$this->getAmazonAccount()->isMagentoOrdersShipmentEnabled()) {
@@ -416,8 +586,11 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return true;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return Mage_Sales_Model_Order_Shipment|null
+     */
     public function createShipment()
     {
         if (!$this->canCreateShipment()) {
@@ -427,18 +600,22 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         $magentoOrder = $this->getParentObject()->getMagentoOrder();
 
         // Create shipment
-        // -------------
+        // ---------------------------------------
         /** @var $shipmentBuilder Ess_M2ePro_Model_Magento_Order_Shipment */
         $shipmentBuilder = Mage::getModel('M2ePro/Magento_Order_Shipment');
         $shipmentBuilder->setMagentoOrder($magentoOrder);
         $shipmentBuilder->buildShipment();
-        // -------------
+        // ---------------------------------------
 
         return $shipmentBuilder->getShipment();
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @param array $trackingDetails
+     * @return bool
+     */
     public function canUpdateShippingStatus(array $trackingDetails = array())
     {
         if ($this->isShipped() && empty($trackingDetails)) {
@@ -452,6 +629,11 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return true;
     }
 
+    /**
+     * @param array $trackingDetails
+     * @param array $items
+     * @return bool
+     */
     public function updateShippingStatus(array $trackingDetails = array(), array $items = array())
     {
         if (!$this->canUpdateShippingStatus($trackingDetails)) {
@@ -521,12 +703,70 @@ class Ess_M2ePro_Model_Amazon_Order extends Ess_M2ePro_Model_Component_Child_Ama
         return true;
     }
 
-    // ########################################
+    //########################################
+
+    /**
+     * @return bool
+     */
+    public function canRefund()
+    {
+        if ($this->getStatus() == self::STATUS_CANCELED) {
+            return false;
+        }
+
+        if (!$this->getAmazonAccount()->isRefundEnabled()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array $items
+     * @return bool
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
+    public function refund(array $items = array())
+    {
+        if (!$this->canRefund()) {
+            return false;
+        }
+
+        $params = array(
+            'order_id' => $this->getAmazonOrderId(),
+            'currency' => $this->getCurrency(),
+            'items'    => $items,
+        );
+
+        $totalItemsCount = $this->getParentObject()->getItemsCollection()->count();
+
+        $orderId     = $this->getParentObject()->getId();
+        $creatorType = Ess_M2ePro_Model_Order_Change::CREATOR_TYPE_OBSERVER;
+        $component   = Ess_M2ePro_Helper_Component_Amazon::NICK;
+
+        /** @var Ess_M2ePro_Model_Mysql4_Order_Change_Collection $changeCollection */
+        $changeCollection = Mage::getModel('M2ePro/Order_Change')->getCollection();
+        $changeCollection->addFieldToFilter('order_id', $orderId);
+        $changeCollection->addFieldToFilter('action', Ess_M2ePro_Model_Order_Change::ACTION_UPDATE_SHIPPING);
+
+        $action = Ess_M2ePro_Model_Order_Change::ACTION_CANCEL;
+        if ($this->isShipped() || $this->isPartiallyShipped() || count($items) != $totalItemsCount ||
+            $this->isLockedObject('update_shipping_status') || $changeCollection->getSize() > 0
+        ) {
+            $action = Ess_M2ePro_Model_Order_Change::ACTION_REFUND;
+        }
+
+        Mage::getModel('M2ePro/Order_Change')->create($orderId, $action, $creatorType, $component, $params);
+
+        return true;
+    }
+
+    //########################################
 
     public function deleteInstance()
     {
         return $this->delete();
     }
 
-    // ########################################
+    //########################################
 }

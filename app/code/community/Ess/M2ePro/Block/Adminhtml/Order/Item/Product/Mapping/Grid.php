@@ -1,27 +1,31 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Order_Item_Product_Mapping_Grid extends Mage_Adminhtml_Block_Widget_Grid
 {
+    //########################################
+
     public function __construct()
     {
         parent::__construct();
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('orderItemProductMappingGrid');
-        //------------------------------
+        // ---------------------------------------
 
         // Set default values
-        //------------------------------
+        // ---------------------------------------
         $this->setDefaultSort('product_id');
         $this->setDefaultDir('DESC');
         $this->setSaveParametersInSession(true);
         $this->setUseAjax(true);
-        //------------------------------
+        // ---------------------------------------
     }
 
     protected function _prepareCollection()
@@ -109,7 +113,7 @@ class Ess_M2ePro_Block_Adminhtml_Order_Item_Product_Mapping_Grid extends Mage_Ad
         ));
     }
 
-    // ####################################
+    //########################################
 
     public function callbackColumnProductId($productId, $product, $column, $isExport)
     {
@@ -170,10 +174,11 @@ class Ess_M2ePro_Block_Adminhtml_Order_Item_Product_Mapping_Grid extends Mage_Ad
     public function callbackColumnActions($value, $row, $column, $isExport)
     {
         $productId = (int)$row->getId();
+        $productSku = $row->getSku();
         $label = Mage::helper('M2ePro')->__('Map To This Product');
 
         $js = <<<JS
-$('product_id').setValue('{$productId}'); $('sku').setValue(''); $$('#product_mapping_submit_button')[0].click();
+OrderEditItemHandlerObj.assignProduct('{$productId}', '{$productSku}');
 JS;
 
         $html = <<<HTML
@@ -199,7 +204,7 @@ HTML;
         );
     }
 
-    // ####################################
+    //########################################
 
     public function getGridUrl()
     {
@@ -211,5 +216,5 @@ HTML;
         return false;
     }
 
-    // ####################################
+    //########################################
 }

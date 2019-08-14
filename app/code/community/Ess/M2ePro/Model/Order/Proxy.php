@@ -1,17 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Model_Order_Proxy
 {
-    // ########################################
-
     const CHECKOUT_GUEST    = 'guest';
     const CHECKOUT_REGISTER = 'register';
-
-    // ########################################
 
     /** @var $order Ess_M2ePro_Model_Ebay_Order|Ess_M2ePro_Model_Amazon_Order|Ess_M2ePro_Model_Buy_Order */
     protected $order = NULL;
@@ -23,14 +21,14 @@ abstract class Ess_M2ePro_Model_Order_Proxy
 
     protected $addressData = array();
 
-    // ########################################
+    //########################################
 
     public function __construct(Ess_M2ePro_Model_Component_Child_Abstract $order)
     {
         $this->order = $order;
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Order_Item_Proxy[]
@@ -93,33 +91,44 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         return $items;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @param Mage_Core_Model_Store $store
+     * @return $this
+     */
     public function setStore(Mage_Core_Model_Store $store)
     {
         $this->store = $store;
         return $this;
     }
 
+    /**
+     * @return Mage_Core_Model_Store
+     * @throws Ess_M2ePro_Model_Exception
+     */
     public function getStore()
     {
         if (is_null($this->store)) {
-            throw new Exception('Store is not set.');
+            throw new Ess_M2ePro_Model_Exception('Store is not set.');
         }
 
         return $this->store;
     }
 
-    // ########################################
+    //########################################
 
     abstract public function getCheckoutMethod();
 
+    /**
+     * @return bool
+     */
     public function isCheckoutMethodGuest()
     {
         return $this->getCheckoutMethod() == self::CHECKOUT_GUEST;
     }
 
-    // ########################################
+    //########################################
 
     abstract public function isOrderNumberPrefixSourceMagento();
 
@@ -129,11 +138,11 @@ abstract class Ess_M2ePro_Model_Order_Proxy
 
     abstract public function getOrderNumberPrefix();
 
-    // ########################################
+    //########################################
 
     abstract public function getBuyerEmail();
 
-    // ########################################
+    //########################################
 
     /**
      * @return Mage_Customer_Model_Customer
@@ -154,8 +163,11 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         return $addressData['lastname'];
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getAddressData()
     {
         if (empty($this->addressData)) {
@@ -184,17 +196,23 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         return $this->addressData;
     }
 
+    /**
+     * @return array
+     */
     public function getBillingAddressData()
     {
         return $this->getAddressData();
     }
 
+    /**
+     * @return bool
+     */
     public function shouldIgnoreBillingAddressValidation()
     {
         return false;
     }
 
-    // ########################################
+    //########################################
 
     protected function getNameParts($fullName)
     {
@@ -212,7 +230,7 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         );
     }
 
-    // ########################################
+    //########################################
 
     abstract public function getCurrency();
 
@@ -228,11 +246,11 @@ abstract class Ess_M2ePro_Model_Order_Proxy
             ->convertPriceToBaseCurrency($price, $this->getCurrency(), $this->getStore());
     }
 
-    // ########################################
+    //########################################
 
     abstract public function getPaymentData();
 
-    // ########################################
+    //########################################
 
     abstract public function getShippingData();
 
@@ -243,18 +261,28 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         return $this->convertPriceToBase($this->getShippingPrice());
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getComments()
     {
         return array_merge($this->getGeneralComments(), $this->getChannelComments());
     }
 
+    /**
+     * @return array
+     */
     public function getChannelComments()
     {
         return array();
     }
 
+    /**
+     * @return array
+     * @throws Ess_M2ePro_Model_Exception
+     */
     public function getGeneralComments()
     {
         $store = $this->getStore();
@@ -272,20 +300,20 @@ abstract class Ess_M2ePro_Model_Order_Proxy
         if (!$currencyHelper->isAllowed($this->getCurrency(), $store)) {
             $comments[] = <<<COMMENT
 <b>Attention!</b> The Order Prices are incorrect.
-Conversion was not performed as "{$this->getCurrency()}" currency is not enabled.
-Default currency "{$store->getBaseCurrencyCode()}" was used instead.
-Please, enable currency in System > Configuration > Currency Setup.
+Conversion was not performed as "{$this->getCurrency()}" Currency is not enabled.
+Default Currency "{$store->getBaseCurrencyCode()}" was used instead.
+Please, enable Currency in System > Configuration > Currency Setup.
 COMMENT;
         } elseif ($currencyConvertRate == 0) {
             $comments[] = <<<COMMENT
 <b>Attention!</b> The Order Prices are incorrect.
 Conversion was not performed as there's no rate for "{$this->getCurrency()}".
-Default currency "{$store->getBaseCurrencyCode()}" was used instead.
-Please, add currency convert rate in System > Manage Currency > Rates.
+Default Currency "{$store->getBaseCurrencyCode()}" was used instead.
+Please, add Currency convert rate in System > Manage Currency > Rates.
 COMMENT;
         } else {
             $comments[] = <<<COMMENT
-Because the Order currency is different from the Store currency,
+Because the Order Currency is different from the Store Currency,
 the conversion from <b>"{$this->getCurrency()}" to "{$store->getBaseCurrencyCode()}"</b> was performed
 using <b>{$currencyConvertRate}</b> as a rate.
 COMMENT;
@@ -294,7 +322,7 @@ COMMENT;
         return $comments;
     }
 
-    // ########################################
+    //########################################
 
     abstract public function hasTax();
 
@@ -302,19 +330,19 @@ COMMENT;
 
     abstract public function isVatTax();
 
-    // -----------------------------------------
+    // ---------------------------------------
 
     abstract public function getProductPriceTaxRate();
 
     abstract public function getShippingPriceTaxRate();
 
-    // -----------------------------------------
+    // ---------------------------------------
 
     abstract public function isProductPriceIncludeTax();
 
     abstract public function isShippingPriceIncludeTax();
 
-    // -----------------------------------------
+    // ---------------------------------------
 
     abstract public function isTaxModeNone();
 
@@ -322,6 +350,9 @@ COMMENT;
 
     abstract public function isTaxModeMagento();
 
+    /**
+     * @return bool
+     */
     public function isTaxModeMixed()
     {
         return !$this->isTaxModeNone() &&
@@ -329,5 +360,5 @@ COMMENT;
                !$this->isTaxModeMagento();
     }
 
-    // ########################################
+    //########################################
 }

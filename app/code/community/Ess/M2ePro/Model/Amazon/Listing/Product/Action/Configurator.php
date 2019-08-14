@@ -1,108 +1,165 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator
+    extends Ess_M2ePro_Model_Listing_Product_Action_Configurator
 {
-    const ALL_DATA_KEY     = 'all_data';
-    const ONLY_DATA_KEY    = 'only_data';
+    const DATA_TYPE_QTY     = 'qty';
+    const DATA_TYPE_PRICE   = 'price';
+    const DATA_TYPE_IMAGES  = 'images';
+    const DATA_TYPE_DETAILS = 'details';
+    const DATA_TYPE_SHIPPING_OVERRIDE = 'shipping_override';
 
-    const TYPE_GENERAL     = 'general';
-
-    const TYPE_QTY         = 'qty';
-    const TYPE_PRICE       = 'price';
-    const TYPE_IMAGES      = 'images';
-    const TYPE_DETAILS     = 'details';
+    //########################################
 
     /**
-     * @var array
+     * @return array
      */
-    private $params = array();
-
-    // ########################################
-
-    public function setParams(array $params = array())
+    public function getAllDataTypes()
     {
-        $this->params = $params;
+        return array(
+            self::DATA_TYPE_QTY,
+            self::DATA_TYPE_PRICE,
+            self::DATA_TYPE_DETAILS,
+            self::DATA_TYPE_IMAGES,
+            self::DATA_TYPE_SHIPPING_OVERRIDE
+        );
     }
 
-    public function getParams()
+    //########################################
+
+    /**
+     * @return bool
+     */
+    public function isQtyAllowed()
     {
-        return $this->params;
+        return $this->isAllowed(self::DATA_TYPE_QTY);
     }
 
-    // ########################################
-
-    public function isAll()
+    /**
+     * @return $this
+     */
+    public function allowQty()
     {
-        return isset($this->params[self::ALL_DATA_KEY]) &&
-               (bool)$this->params[self::ALL_DATA_KEY];
+        return $this->allow(self::DATA_TYPE_QTY);
     }
 
-    public function isOnly()
+    /**
+     * @return $this
+     */
+    public function disallowQty()
     {
-        return isset($this->params[self::ONLY_DATA_KEY]) &&
-               is_array($this->params[self::ONLY_DATA_KEY]) &&
-               count($this->params[self::ONLY_DATA_KEY]) > 0;
+        return $this->disallow(self::DATA_TYPE_QTY);
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
-    public function isAllPermitted()
+    /**
+     * @return bool
+     */
+    public function isPriceAllowed()
     {
-        return $this->isGeneral() &&
-               $this->isQty() && $this->isPrice() &&
-               $this->isImages() && $this->isDetails();
+        return $this->isAllowed(self::DATA_TYPE_PRICE);
     }
 
-    // ########################################
-
-    public function isGeneral()
+    /**
+     * @return $this
+     */
+    public function allowPrice()
     {
-        return $this->isAllowed(self::TYPE_GENERAL);
+        return $this->allow(self::DATA_TYPE_PRICE);
     }
 
-    // -----------------------------------------
-
-    public function isQty()
+    /**
+     * @return $this
+     */
+    public function disallowPrice()
     {
-        return $this->isAllowed(self::TYPE_QTY);
+        return $this->disallow(self::DATA_TYPE_PRICE);
     }
 
-    public function isPrice()
+    // ---------------------------------------
+
+    /**
+     * @return bool
+     */
+    public function isDetailsAllowed()
     {
-        return $this->isAllowed(self::TYPE_PRICE);
+        return $this->isAllowed(self::DATA_TYPE_DETAILS);
     }
 
-    // -----------------------------------------
-
-    public function isImages()
+    /**
+     * @return $this
+     */
+    public function allowDetails()
     {
-        return $this->isAllowed(self::TYPE_IMAGES);
+        return $this->allow(self::DATA_TYPE_DETAILS);
     }
 
-    public function isDetails()
+    /**
+     * @return $this
+     */
+    public function disallowDetails()
     {
-        return $this->isAllowed(self::TYPE_DETAILS);
+        return $this->disallow(self::DATA_TYPE_DETAILS);
     }
 
-    // ########################################
+    // ---------------------------------------
 
-    private function isAllowed($type)
+    /**
+     * @return bool
+     */
+    public function isImagesAllowed()
     {
-        if ($this->isAll()) {
-            return true;
-        }
-
-        if (!$this->isOnly()) {
-            return true;
-        }
-
-        return isset($this->params[self::ONLY_DATA_KEY][$type]) &&
-               (bool)$this->params[self::ONLY_DATA_KEY][$type];
+        return $this->isAllowed(self::DATA_TYPE_IMAGES);
     }
 
-    // ########################################
+    /**
+     * @return $this
+     */
+    public function allowImages()
+    {
+        return $this->allow(self::DATA_TYPE_IMAGES);
+    }
+
+    /**
+     * @return $this
+     */
+    public function disallowImages()
+    {
+        return $this->disallow(self::DATA_TYPE_IMAGES);
+    }
+
+    // ---------------------------------------
+
+    /**
+     * @return bool
+     */
+    public function isShippingOverrideAllowed()
+    {
+        return $this->isAllowed(self::DATA_TYPE_SHIPPING_OVERRIDE);
+    }
+
+    /**
+     * @return $this
+     */
+    public function allowShippingOverride()
+    {
+        return $this->allow(self::DATA_TYPE_SHIPPING_OVERRIDE);
+    }
+
+    /**
+     * @return $this
+     */
+    public function disallowShippingOverride()
+    {
+        return $this->disallow(self::DATA_TYPE_SHIPPING_OVERRIDE);
+    }
+
+    //########################################
 }

@@ -1,13 +1,20 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_General
     extends Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_Validator
 {
-    public function isValid()
+    //########################################
+
+    /**
+     * @return bool
+     */
+    public function validate()
     {
         if (!$this->getListingProduct()->isListable()) {
 
@@ -18,21 +25,9 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_General
             return false;
         }
 
-        $generalId = $this->getBuyListingProduct()->getGeneralId();
-        if (empty($generalId)) {
-            $generalId = $this->getBuyListingProduct()->getListingSource()->getSearchGeneralId();
-
-            if (!empty($generalId)) {
-                $this->data['general_id_mode'] = $this->getBuyListing()->getGeneralIdMode();
-            }
-        }
-
-        if (empty($generalId)) {
-            $this->addMessage('Product cannot be listed because Rakuten.com SKU is not specified.');
+        if ($this->getVariationManager()->isVariationProduct() && !$this->validateVariationProductMatching()) {
             return false;
         }
-
-        $this->data['general_id'] = $generalId;
 
         if (!$this->validateQty()) {
             return false;
@@ -45,4 +40,5 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_General
         return true;
     }
 
+    //########################################
 }

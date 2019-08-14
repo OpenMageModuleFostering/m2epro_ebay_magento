@@ -1,20 +1,21 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Configuration_ComponentsController
     extends Ess_M2ePro_Controller_Adminhtml_Configuration_MainController
 {
-    //#############################################
+    //########################################
 
     public function saveAction()
     {
         $ebayMode = (int)$this->getRequest()->getParam('component_ebay_mode');
         $amazonMode = (int)$this->getRequest()->getParam('component_amazon_mode');
         $buyMode = (int)$this->getRequest()->getParam('component_buy_mode');
-        $playMode = (int)$this->getRequest()->getParam('component_play_mode');
 
         Mage::helper('M2ePro/Module')->getConfig()->setGroupValue(
             '/view/common/component/', 'default',
@@ -32,35 +33,23 @@ class Ess_M2ePro_Adminhtml_Configuration_ComponentsController
             '/component/buy/', 'mode',
             $buyMode
         );
-        Mage::helper('M2ePro/Module')->getConfig()->setGroupValue(
-            '/component/play/', 'mode',
-            $playMode
-        );
 
         // Update Buy marketplace status
-        // ----------------------------------
+        // ---------------------------------------
         Mage::helper('M2ePro/Component_Buy')->getCollection('Marketplace')
             ->getFirstItem()
             ->setData('status', $buyMode)
             ->save();
-        // ----------------------------------
-
-        // Update Play marketplace status
-        // ----------------------------------
-        Mage::helper('M2ePro/Component_Play')->getCollection('Marketplace')
-            ->getFirstItem()
-            ->setData('status', $playMode)
-            ->save();
-        // ----------------------------------
+        // ---------------------------------------
 
         Mage::helper('M2ePro/Magento')->clearMenuCache();
 
         $this->_getSession()->addSuccess(
-            Mage::helper('M2ePro')->__('The global settings have been successfully saved.')
+            Mage::helper('M2ePro')->__('The global Settings have been successfully saved.')
         );
 
         $this->_redirectUrl($this->_getRefererUrl());
     }
 
-    //#############################################
+    //########################################
 }

@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
     extends Ess_M2ePro_Controller_Adminhtml_Common_MainController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -22,6 +24,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             ->addCss('M2ePro/css/Plugin/DropDown.css')
             ->addCss('M2ePro/css/Plugin/AutoComplete.css')
             ->addJs('mage/adminhtml/rules.js')
+            ->addJs('M2ePro/Plugin/ActionColumn.js')
             ->addJs('M2ePro/Plugin/DropDown.js')
             ->addJs('M2ePro/Plugin/ProgressBar.js')
             ->addJs('M2ePro/Plugin/AreaWrapper.js')
@@ -41,8 +44,12 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             ->addJs('M2ePro/Listing/MovingHandler.js')
             ->addJs('M2ePro/Common/Amazon/Listing/ActionHandler.js')
             ->addJs('M2ePro/Common/Amazon/Listing/ProductSearchHandler.js')
-            ->addJs('M2ePro/Common/Amazon/Listing/TemplateDescriptionHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/Template/DescriptionHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/Template/ShippingOverrideHandler.js')
             ->addJs('M2ePro/Common/Amazon/Listing/VariationProductManageHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/FulfillmentHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/RepricingHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/AfnQtyHandler.js')
 
             ->addJs('M2ePro/TemplateHandler.js')
             ->addJs('M2ePro/Common/Listing/SettingsHandler.js')
@@ -53,15 +60,17 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
 
         $this->_initPopUp();
 
+        $this->setPageHelpLink(Ess_M2ePro_Helper_Component_Amazon::NICK, 'Edit+M2E+Pro+Listing+Settings');
+
         return $this;
     }
 
     protected function _isAllowed()
     {
-        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/listings/listing');
+        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/listings');
     }
 
-    //#############################################
+    //########################################
 
     public function indexAction()
     {
@@ -82,13 +91,14 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $this->getResponse()->setBody($block->toHtml());
     }
 
-    //#############################################
+    //########################################
 
     public function searchAction()
     {
-        $this->_initAction()
-            ->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_amazon_listing_search'))
-            ->renderLayout();
+        /** @var $block Ess_M2ePro_Block_Adminhtml_Common_Listing */
+        $block = $this->loadLayout()->getLayout()->createBlock('M2ePro/adminhtml_common_listing_search');
+
+        $this->_initAction()->_addContent($block)->renderLayout();
     }
 
     public function searchGridAction()
@@ -97,47 +107,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $this->getResponse()->setBody($block->toHtml());
     }
 
-    //#############################################
-
-    public function getProductsFromCategoriesAction()
-    {
-        $hideProductsOthersListings = (bool)$this->getRequest()->getParam('hide_products_others_listings', true);
-        $listingId = $this->getRequest()->getParam('listing_id');
-        $listing = Mage::helper('M2ePro/Component_Amazon')->getCachedObject('Listing',$listingId);
-
-        $categories = $this->getRequest()->getParam('categories');
-        $categoriesIds = explode(',', $categories);
-        $categoriesIds = array_unique($categoriesIds);
-
-        $categoriesSave = $this->getRequest()->getParam('categories_save');
-        if ($listing->isSourceProducts()) {
-            $categoriesSave = 0;
-        }
-
-        $oldCategories = $listing->getCategories();
-        $oldCategoriesIds = array();
-        foreach ($oldCategories as $oldCategory) {
-            $oldCategoriesIds[] = $oldCategory['category_id'];
-        }
-
-        $products = array();
-        foreach ($categoriesIds as $categoryId) {
-            if ($categoriesSave && !in_array($categoryId, $oldCategoriesIds)) {
-                Mage::getModel('M2ePro/Listing_Category')
-                    ->setData(array('listing_id'=>$listing->getId(),'category_id'=>$categoryId))
-                    ->save();
-            }
-
-            $tempProducts = $listing->getProductsFromCategory($categoryId,$hideProductsOthersListings);
-            !empty($tempProducts) && $products = array_merge($products, $tempProducts);
-        }
-
-        if (!empty($products)) {
-            echo implode(',', $products);
-        }
-    }
-
-    //#############################################
+    //########################################
 
     public function viewAction()
     {
@@ -167,30 +137,33 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
 
         if (!empty($listingProductsIds)) {
             $this->_redirect('*/adminhtml_common_amazon_listing_productAdd/index', array(
-                'id' => $id
+                'id' => $id,
+                'not_completed' => 1
             ));
             return;
         }
 
         // Check listing lock object
-        //----------------------------
+        // ---------------------------------------
         if ($model->isLockedObject('products_in_action')) {
             $this->_getSession()->addNotice(
                 Mage::helper('M2ePro')->__('Some Amazon request(s) are being processed now.')
             );
         }
-        //----------------------------
+        // ---------------------------------------
 
         Mage::helper('M2ePro/Data_Global')->setValue('temp_data', $model->getData());
         Mage::helper('M2ePro/Data_Global')->setValue('marketplace_id', $model->getMarketplaceId());
 
         // Set rule model
-        // ---------------------------
+        // ---------------------------------------
         $this->setRuleData('amazon_rule_listing_view');
-        // ---------------------------
+        // ---------------------------------------
 
-        $this->_initAction()
-            ->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_amazon_listing_view'))
+        $this->_initAction();
+        $this->setPageHelpLink(Ess_M2ePro_Helper_Component_Amazon::NICK, 'Manage+M2E+Pro+Listings');
+
+        $this->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_amazon_listing_view'))
             ->renderLayout();
     }
 
@@ -203,16 +176,16 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         Mage::helper('M2ePro/Data_Global')->setValue('marketplace_id', $model->getMarketplaceId());
 
         // Set rule model
-        // ---------------------------
+        // ---------------------------------------
         $this->setRuleData('amazon_rule_listing_view');
-        // ---------------------------
+        // ---------------------------------------
 
         $response = $this->loadLayout()->getLayout()
             ->createBlock('M2ePro/adminhtml_common_amazon_listing_view')->getGridHtml();
         $this->getResponse()->setBody($response);
     }
 
-    //#############################################
+    //########################################
 
     public function editAction()
     {
@@ -248,60 +221,37 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $oldData = $model->getDataSnapshot();
 
         // Base prepare
-        //--------------------
+        // ---------------------------------------
         $data = array();
-        //--------------------
+        // ---------------------------------------
 
         // tab: settings
-        //--------------------
+        // ---------------------------------------
         $keys = array(
-            'title',
             'template_selling_format_id',
             'template_synchronization_id',
-
-            'categories_add_action',
-            'categories_delete_action'
         );
         foreach ($keys as $key) {
             if (isset($post[$key])) {
                 $data[$key] = $post[$key];
             }
         }
-        //--------------------
+        // ---------------------------------------
 
         $model->addData($data)->save();
-
-        // Delete old categories
-        //---------------
-        $oldCategories = (array)$model->getCategories(true);
-        foreach ($oldCategories as $oldCategory) {
-            $oldCategory->deleteInstance();
-        }
-
-        // Save selected categories
-        //---------------
-        if (!empty($post['selected_categories'])) {
-            $categoriesIds = explode(',',$post['selected_categories']);
-            $categoriesIds = array_unique($categoriesIds);
-
-            foreach ($categoriesIds as $categoryId) {
-                Mage::getModel('M2ePro/Listing_Category')
-                    ->setData(array('listing_id'=> $id,'category_id'=>(int)$categoryId))
-                    ->save();
-            }
-        }
-        //---------------
 
         $templateData = array();
 
         // tab: channel settings
-        //---------------
+        // ---------------------------------------
         $keys = array(
             'account_id',
             'marketplace_id',
 
             'sku_mode',
             'sku_custom_attribute',
+            'sku_modification_mode',
+            'sku_modification_custom_value',
             'generate_sku_mode',
 
             'general_id_mode',
@@ -317,6 +267,19 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
 
             'condition_note_mode',
             'condition_note_value',
+
+            'image_main_mode',
+            'image_main_attribute',
+
+            'gallery_images_mode',
+            'gallery_images_limit',
+            'gallery_images_attribute',
+
+            'gift_wrap_mode',
+            'gift_wrap_attribute',
+
+            'gift_message_mode',
+            'gift_message_attribute',
 
             'handling_time_mode',
             'handling_time_value',
@@ -338,7 +301,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             $templateData['restock_date_value'] = Mage::helper('M2ePro')
                                                     ->timezoneDateToGmt($templateData['restock_date_value']);
         }
-        //---------------
+        // ---------------------------------------
 
         $model->addData($templateData)->save();
         $newData = $model->getDataSnapshot();
@@ -375,14 +338,14 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $deleted && $this->_getSession()->addSuccess($tempString);
 
         $tempString = Mage::helper('M2ePro')->__(
-            '%amount% Listing(s) have listed Items and can not be deleted', $locked
+            '%amount% Listing(s) have Listed Items and can not be deleted', $locked
         );
         $locked && $this->_getSession()->addError($tempString);
 
-        $this->_redirect('*/adminhtml_common_listing/index');
+        $this->_redirectUrl(Mage::helper('M2ePro')->getBackUrl());
     }
 
-    //#############################################
+    //########################################
 
     protected function processConnector($action, array $params = array())
     {
@@ -431,7 +394,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         );
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     public function runListProductsAction()
     {
@@ -475,7 +438,147 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         ));
     }
 
-    //#############################################
+    //########################################
+
+    public function switchToAFNAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+
+        if (empty($productsIds)) {
+            return $this->getResponse()->setBody('ERROR: Empty Product ID!');
+        }
+
+        if (!is_array($productsIds)) {
+            $productsIds = explode(',', $productsIds);
+        }
+
+        $listingProducts = array();
+        foreach ($productsIds as $listingProductId) {
+
+            /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
+            $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product', $listingProductId);
+
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator $configurator */
+            $configurator = Mage::getModel('M2ePro/Amazon_Listing_Product_Action_Configurator');
+            $configurator->setPartialMode();
+            $configurator->allowQty();
+
+            $listingProduct->setActionConfigurator($configurator);
+            $listingProducts[] = $listingProduct;
+        }
+
+        $params['status_changer'] = Ess_M2ePro_Model_Listing_Product::STATUS_CHANGER_USER;
+        $params['switch_to'] = Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Qty::FULFILLMENT_MODE_AFN;
+        $action = Ess_M2ePro_Model_Listing_Product::ACTION_REVISE;
+
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Product_Dispatcher');
+        $result = (int)$dispatcherObject->process($action, $listingProducts, $params);
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'messages' => array($this->getSwitchFulfillmentResultMessage($result))
+        )));
+    }
+
+    public function switchToMFNAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+
+        if (empty($productsIds)) {
+            return $this->getResponse()->setBody('ERROR: Empty Product ID!');
+        }
+
+        if (!is_array($productsIds)) {
+            $productsIds = explode(',', $productsIds);
+        }
+
+        $listingProducts = array();
+        foreach ($productsIds as $listingProductId) {
+
+            /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
+            $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product', $listingProductId);
+
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator $configurator */
+            $configurator = Mage::getModel('M2ePro/Amazon_Listing_Product_Action_Configurator');
+            $configurator->setPartialMode();
+            $configurator->allowQty();
+
+            $listingProduct->setActionConfigurator($configurator);
+            $listingProducts[] = $listingProduct;
+        }
+
+        $params['status_changer'] = Ess_M2ePro_Model_Listing_Product::STATUS_CHANGER_USER;
+        $params['switch_to'] = Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Qty::FULFILLMENT_MODE_MFN;
+        $action = Ess_M2ePro_Model_Listing_Product::ACTION_REVISE;
+
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Product_Dispatcher');
+        $result = (int)$dispatcherObject->process($action, $listingProducts, $params);
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'messages' => array($this->getSwitchFulfillmentResultMessage($result))
+        )));
+    }
+
+    protected function getSwitchFulfillmentResultMessage($result)
+    {
+        $messageType = '';
+        $messageText = '';
+
+        if ($result == Ess_M2ePro_Helper_Data::STATUS_ERROR) {
+            $messageType = 'error';
+            $messageText = Mage::helper('M2ePro')->__('
+                Fulfillment was not switched. Please check Listing Log for more details.');
+        }
+
+        if ($result == Ess_M2ePro_Helper_Data::STATUS_WARNING) {
+            $messageType = 'warning';
+            $messageText = Mage::helper('M2ePro')->__('
+                Fulfillment switching is in progress now but there are some warnings. Please check Listing Log
+                for more details.');
+        }
+
+        if ($result == Ess_M2ePro_Helper_Data::STATUS_SUCCESS) {
+            $messageType = 'success';
+            $messageText = Mage::helper('M2ePro')->__('Fulfillment switching is in progress now. Please wait.');
+        }
+
+        return array(
+            'type' => $messageType,
+            'text' => $messageText
+        );
+    }
+
+    // ---------------------------------------
+
+    public function getAFNQtyBySkuAction()
+    {
+        $accountId = $this->getRequest()->getParam('account_id');
+        $skus = $this->getRequest()->getParam('skus');
+
+        if (empty($skus) || empty($accountId)) {
+            return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (!is_array($skus)) {
+            $skus = explode(',', $skus);
+        }
+
+        /** @var $dispatcherObject Ess_M2ePro_Model_Connector_Amazon_Dispatcher */
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('inventory','get','qtyAfnItems',
+            array(
+                'items' => $skus,
+                'only_realtime' => true
+            ),
+            null,
+            $accountId
+        );
+
+        $data = $dispatcherObject->process($connectorObj);
+
+        return $this->getResponse()->setBody(json_encode($data));
+    }
+
+    //########################################
 
     public function getSearchAsinMenuAction()
     {
@@ -521,12 +624,12 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $this->getResponse()->setBody($response);
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function searchAsinManualAction()
     {
         $productId = $this->getRequest()->getParam('product_id');
-        $query = $this->getRequest()->getParam('query');
+        $query = trim($this->getRequest()->getParam('query'));
 
         if (empty($productId)) {
             return $this->getResponse()->setBody('No product_id!');
@@ -611,7 +714,35 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         return $this->getResponse()->setBody('0');
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
+
+    public function getCategoriesByAsinAction()
+    {
+        $asin = $this->getRequest()->getParam('asin');
+        $productId = $this->getRequest()->getParam('product_id');
+
+        if (empty($asin)) {
+            return $this->getResponse()->setBody('You should select one or more Products');
+        }
+
+        $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product', $productId);
+
+        /** @var $dispatcherObject Ess_M2ePro_Model_Connector_Amazon_Dispatcher */
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('product','search','categoriesByAsin',
+                                                               array('item' => $asin,
+                                                                     'only_realtime' => true),
+                                                               null,
+                                                               $listingProduct->getAccount()->getId());
+
+        $categoriesData = $dispatcherObject->process($connectorObj);
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'data' => empty($categoriesData['categories']) ? '' : $categoriesData['categories']
+        )));
+    }
+
+    // ---------------------------------------
 
     public function getProductsSearchStatusAction()
     {
@@ -692,7 +823,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             $messages[] = array(
                 'type' => 'success',
                 'text' => Mage::helper('M2ePro')->__(
-                    'ASIN(s)/ISBN(s) were found and assigned for %count selected Items.',
+                    'ASIN(s)/ISBN(s) were found and assigned for %count% selected Items.',
                     count($data)
                 )
             );
@@ -703,117 +834,248 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         )));
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function mapToAsinAction()
     {
-        $productId = $this->getRequest()->getParam('product_id');
-        $generalId = $this->getRequest()->getParam('general_id');
+        $productId   = $this->getRequest()->getParam('product_id');
+        $generalId   = $this->getRequest()->getParam('general_id');
         $optionsData = $this->getRequest()->getParam('options_data');
-        $searchType = $this->getRequest()->getParam('search_type');
+        $searchType  = $this->getRequest()->getParam('search_type');
         $searchValue = $this->getRequest()->getParam('search_value');
 
-        if (empty($productId) || empty($generalId) ||
-            (
-                !Mage::helper('M2ePro/Component_Amazon')->isASIN($generalId) &&
-                !Mage::helper('M2ePro')->isISBN($generalId)
-            )) {
+        if (empty($productId) || empty($generalId)) {
             return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (!Mage::helper('M2ePro/Component_Amazon')->isASIN($generalId) &&
+            !Mage::helper('M2ePro')->isISBN($generalId)
+        ) {
+            return $this->getResponse()->setBody('General ID has invalid format.');
         }
 
         /** @var $listingProduct Ess_M2ePro_Model_Listing_Product */
-        $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product',$productId);
+        $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product', $productId);
 
-        /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager $listingProductManager */
-        $listingProductManager = $listingProduct->getChildObject()->getVariationManager();
+        /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
+        $amazonListingProduct = $listingProduct->getChildObject();
 
-        if ($listingProductManager->isVariationParent() && empty($optionsData)) {
+        $variationManager = $amazonListingProduct->getVariationManager();
+
+        if ($variationManager->isRelationParentType() && empty($optionsData)) {
             return $this->getResponse()->setBody('You should provide correct parameters.');
         }
 
+        if (!$listingProduct->isNotListed() || $amazonListingProduct->isGeneralIdOwner()) {
+            return $this->getResponse()->setBody('0');
+        }
+
         $searchStatusInProgress = Ess_M2ePro_Model_Amazon_Listing_Product::SEARCH_SETTINGS_STATUS_IN_PROGRESS;
-        if ($listingProduct->isNotListed() &&
-            !$listingProduct->getData('is_general_id_owner') &&
-            $listingProduct->getData('search_settings_status') != $searchStatusInProgress
-        ) {
-            $runListingProductProcessor = false;
-            if (!empty($optionsData) && $listingProductManager->isRelationParentType()) {
-                $optionsData = json_decode($optionsData, true);
 
-                $parentType = $listingProductManager->getTypeModel();
+        if ($listingProduct->getData('search_settings_status') == $searchStatusInProgress) {
+            return $this->getResponse()->setBody('0');
+        }
 
-                foreach ($optionsData['matched_attributes'] as $magentoAttr => $amazonAttr) {
-                    Mage::helper('M2ePro/Component_Amazon_Vocabulary')
-                        ->addAttributes($listingProduct->getMarketplace()->getId(), $magentoAttr, $amazonAttr);
-                }
+        if (!empty($searchType) && !empty($searchValue)) {
+            $generalIdSearchInfo = array(
+                'is_set_automatic' => false,
+                'type'  => $searchType,
+                'value' => $searchValue,
+            );
 
-                $parentType->setMatchedAttributes($optionsData['matched_attributes'], false);
-                $parentType->setChannelAttributesSets($optionsData['variations']['set'], false);
+            $listingProduct->setSettings('general_id_search_info', $generalIdSearchInfo);
+        }
 
-                $channelVariations = array();
-                foreach($optionsData['variations']['asins'] as $asin=>$asinAttributes) {
-                    $channelVariations[$asin] = $asinAttributes['specifics'];
-                }
-                $parentType->setChannelVariations($channelVariations, false);
-                $runListingProductProcessor = true;
-            }
+        $listingProduct->setData('general_id',$generalId);
+        $listingProduct->setData('search_settings_status',NULL);
+        $listingProduct->setData('search_settings_data',NULL);
 
-            if (!empty($searchType) && !empty($searchValue)) {
-                $generalIdSearchInfo = array(
-                    'is_set_automatic'  => false,
-                    'type'  => $searchType,
-                    'value' => $searchValue,
-                );
-                $listingProduct->setSettings('general_id_search_info', $generalIdSearchInfo);
-            }
+        $listingProduct->save();
 
-            $listingProduct->setData('general_id',$generalId);
-            $listingProduct->setData('search_settings_status',NULL);
-            $listingProduct->setData('search_settings_data',NULL);
+        if (empty($optionsData)) {
+            return $this->getResponse()->setBody('0');
+        }
 
-            $listingProduct->save();
+        $optionsData = json_decode($optionsData, true);
 
-            if ($runListingProductProcessor) {
-                $parentType->getProcessor()->process();
-            }
+        if ($variationManager->isRelationParentType()) {
+            if (empty($optionsData['virtual_matched_attributes'])) {
+                $matchedAttributes = $optionsData['matched_attributes'];
+            } else {
+                $attributesData = $optionsData['virtual_matched_attributes'];
 
-            if (!empty($optionsData) && $listingProductManager->isIndividualType()) {
-                $optionsData = json_decode($optionsData, true);
+                $matchedAttributes = array();
+                $virtualMagentoAttributes = array();
+                $virtualAmazonAttributes = array();
 
-                $channelVariations = array();
-                foreach($optionsData as $asin => $asinAttributes) {
-                    $channelVariations[$asin] = $asinAttributes['specifics'];
-                }
+                foreach ($attributesData as $key => $value) {
+                    if (strpos($key, 'virtual_magento_attributes_') !== false) {
+                        $amazonAttrKey = 'virtual_magento_option_' . str_replace('virtual_magento_attributes_','',$key);
+                        $virtualMagentoAttributes[$value] = $attributesData[$amazonAttrKey];
 
-                /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Matcher_Attribute $matcherAttributes */
-                $matcherAttributes = Mage::getModel('M2ePro/Amazon_Listing_Product_Variation_Matcher_Attribute');
-                $matcherAttributes->setMarketplaceId($listingProduct->getListing()->getMarketplaceId());
-                $matcherAttributes->setMagentoProduct($listingProduct->getMagentoProduct());
-                $matcherAttributes->setDestinationAttributes(array_keys($channelVariations[$generalId]));
+                        unset($attributesData[$key]);
+                        unset($attributesData[$amazonAttrKey]);
+                        continue;
+                    }
 
-                if ($matcherAttributes->isAmountEqual() &&
-                    $listingProductManager->getTypeModel()->isVariationProductMatched()
-                ) {
+                    if (strpos($key, 'virtual_amazon_attributes_') !== false) {
+                        $amazonAttrKey = 'virtual_amazon_option_' . str_replace('virtual_amazon_attributes_','',$key);
+                        $virtualAmazonAttributes[$value] = $attributesData[$amazonAttrKey];
 
-                    $matchedAttributes = $matcherAttributes->getMatchedAttributes();
+                        unset($attributesData[$key]);
+                        unset($attributesData[$amazonAttrKey]);
+                        continue;
+                    }
 
-                    if (!empty($matchedAttributes)) {
-                        $productOptions = $listingProductManager->getTypeModel()->getProductOptions();
-                        $channelOptions = $channelVariations[$generalId];
+                    if (strpos($key, 'magento_attributes_') !== false) {
+                        $amazonAttrKey = 'amazon_attributes_' . str_replace('magento_attributes_','',$key);
+                        $matchedAttributes[$value] = $attributesData[$amazonAttrKey];
 
-                        foreach ($matchedAttributes as $magentoAttr => $amazonAttr) {
-                            if (empty($amazonAttr)) {
-                                continue;
-                            }
-                            Mage::helper('M2ePro/Component_Amazon_Vocabulary')->addOptions(
-                                $listingProduct->getMarketplace()->getId(),
-                                $productOptions[$magentoAttr],
-                                $channelOptions[$amazonAttr],
-                                $amazonAttr
-                            );
-                        }
+                        unset($attributesData[$key]);
+                        unset($attributesData[$amazonAttrKey]);
+                        continue;
                     }
                 }
+            }
+
+            $channelVariationsSet = array();
+            foreach ($optionsData['variations']['set'] as $attribute => $options) {
+                $channelVariationsSet[$attribute] = array_values($options);
+            }
+
+            $parentTypeModel = $variationManager->getTypeModel();
+
+            if (!empty($virtualMagentoAttributes)) {
+                $parentTypeModel->setVirtualProductAttributes($virtualMagentoAttributes);
+            } else if (!empty($virtualAmazonAttributes)) {
+                $parentTypeModel->setVirtualChannelAttributes($virtualAmazonAttributes);
+            }
+
+            $parentTypeModel->setMatchedAttributes($matchedAttributes, false);
+            $parentTypeModel->setChannelAttributesSets($channelVariationsSet, false);
+
+            $channelVariations = array();
+            foreach ($optionsData['variations']['asins'] as $asin => $asinAttributes) {
+                $channelVariations[$asin] = $asinAttributes['specifics'];
+            }
+            $parentTypeModel->setChannelVariations($channelVariations, false);
+
+            $parentTypeModel->getProcessor()->process();
+
+            if ($listingProduct->getMagentoProduct()->isGroupedType()) {
+                return $this->getResponse()->setBody('0');
+            }
+
+            $vocabularyHelper = Mage::helper('M2ePro/Component_Amazon_Vocabulary');
+
+            if ($vocabularyHelper->isAttributeAutoActionDisabled()) {
+                return $this->getResponse()->setBody('0');
+            }
+
+            $attributesForAddingToVocabulary = array();
+
+            foreach ($matchedAttributes as $productAttribute => $channelAttribute) {
+                if ($productAttribute == $channelAttribute) {
+                    continue;
+                }
+
+                if ($vocabularyHelper->isAttributeExistsInLocalStorage($productAttribute, $channelAttribute)) {
+                    continue;
+                }
+
+                if ($vocabularyHelper->isAttributeExistsInServerStorage($productAttribute, $channelAttribute)) {
+                    continue;
+                }
+
+                $attributesForAddingToVocabulary[$productAttribute] = $channelAttribute;
+            }
+
+            if ($vocabularyHelper->isAttributeAutoActionNotSet()) {
+                $result = array('result' => '0');
+
+                if (!empty($attributesForAddingToVocabulary)) {
+                    $result['vocabulary_attributes'] = $attributesForAddingToVocabulary;
+                }
+
+                return $this->getResponse()->setBody(json_encode($result));
+            }
+
+            foreach ($attributesForAddingToVocabulary as $productAttribute => $channelAttribute) {
+                $vocabularyHelper->addAttribute($productAttribute, $channelAttribute);
+            }
+
+            return $this->getResponse()->setBody('0');
+        }
+
+        if (!$variationManager->isIndividualType()) {
+            return $this->getResponse()->setBody('0');
+        }
+
+        $individualTypeModel = $variationManager->getTypeModel();
+
+        if (!$individualTypeModel->isVariationProductMatched()) {
+            return $this->getResponse()->setBody('0');
+        }
+
+        $channelVariations = array();
+        foreach ($optionsData as $asin => $asinAttributes) {
+            $channelVariations[$asin] = $asinAttributes['specifics'];
+        }
+
+        /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Matcher_Attribute $attributesMatcher */
+        $attributesMatcher = Mage::getModel('M2ePro/Amazon_Listing_Product_Variation_Matcher_Attribute');
+        $attributesMatcher->setMagentoProduct($listingProduct->getMagentoProduct());
+        $attributesMatcher->setDestinationAttributes(array_keys($channelVariations[$generalId]));
+
+        if (!$attributesMatcher->isAmountEqual() || !$attributesMatcher->isFullyMatched()) {
+            return $this->getResponse()->setBody('0');
+        }
+
+        $matchedAttributes = $attributesMatcher->getMatchedAttributes();
+
+        $productOptions = $variationManager->getTypeModel()->getProductOptions();
+        $channelOptions = $channelVariations[$generalId];
+
+        $vocabularyHelper = Mage::helper('M2ePro/Component_Amazon_Vocabulary');
+
+        if ($vocabularyHelper->isOptionAutoActionDisabled()) {
+            return $this->getResponse()->setBody('0');
+        }
+
+        $optionsForAddingToVocabulary = array();
+
+        foreach ($matchedAttributes as $productAttribute => $channelAttribute) {
+            $productOption = $productOptions[$productAttribute];
+            $channelOption = $channelOptions[$channelAttribute];
+
+            if ($productOption == $channelOption) {
+                continue;
+            }
+
+            if ($vocabularyHelper->isOptionExistsInLocalStorage($productOption, $channelOption, $channelAttribute)) {
+                continue;
+            }
+
+            if ($vocabularyHelper->isOptionExistsInServerStorage($productOption, $channelOption, $channelAttribute)) {
+                continue;
+            }
+
+            $optionsForAddingToVocabulary[$channelAttribute] = array($productOption => $channelOption);
+        }
+
+        if ($vocabularyHelper->isOptionAutoActionNotSet()) {
+            $result = array('result' => '0');
+
+            if (!empty($optionsForAddingToVocabulary)) {
+                $result['vocabulary_attribute_options'] = $optionsForAddingToVocabulary;
+            }
+
+            return $this->getResponse()->setBody(json_encode($result));
+        }
+
+        foreach ($optionsForAddingToVocabulary as $channelAttribute => $options) {
+            foreach ($options as $productOption => $channelOption) {
+                $vocabularyHelper->addOption($productOption, $channelOption, $channelAttribute);
             }
         }
 
@@ -859,6 +1121,8 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
                 $parentType->setMatchedAttributes(array(), false);
                 $parentType->setChannelAttributesSets(array(), false);
                 $parentType->setChannelVariations(array(), false);
+                $parentType->setVirtualProductAttributes(array(), false);
+                $parentType->setVirtualChannelAttributes(array(), false);
 
                 $runListingProductProcessor = true;
             }
@@ -953,7 +1217,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         if (count($filteredLockedProducts) != count($filteredProductsIdsByType)) {
             $tempCount = count($filteredLockedProducts) - count($filteredProductsIdsByType);
             $errors[] = Mage::helper('M2ePro')->__(
-                '%count% Items are Simple with custom options or Bundle Magento Products.', $tempCount
+                '%count% Items are Simple with Custom Options or Bundle Magento Products.', $tempCount
             );
             $errorMsgProductsCount += $tempCount;
         }
@@ -985,8 +1249,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             $tempCount = count($filteredProductsIdsByTpl) - count($filteredProductsIdsByParent);
             $errors[] = Mage::helper('M2ePro')->__(
                 'The Category chosen in the Description Policies of %count% Items does not support creation of
-                 Variational Products at all or creation of Variational Products with particular number of
-                 Variation Attributes.',
+                 Variational Products at all.',
                 $tempCount
             );
             $errorMsgProductsCount += $tempCount;
@@ -1019,7 +1282,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
                 ->filterProductsByMagentoProductType($badDescriptionProductsIds);
 
             $descriptionTemplatesBlock = $this->loadLayout()->getLayout()
-                ->createBlock('M2ePro/adminhtml_common_amazon_listing_templateDescription_main');
+                ->createBlock('M2ePro/adminhtml_common_amazon_listing_template_description_main');
             $descriptionTemplatesBlock->setNewAsin(true);
             $descriptionTemplatesBlock->setMessages($messages);
             $descriptionTemplatesBlock = $descriptionTemplatesBlock->toHtml();
@@ -1032,7 +1295,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         )));
     }
 
-    //#############################################
+    //########################################
 
     public function mapToTemplateDescriptionAction()
     {
@@ -1082,6 +1345,10 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $this->setDescriptionTemplateFroProductsByChunks($filteredProductsIdsByType, $templateId);
         $this->runProcessorForParents($filteredProductsIdsByType);
 
+        /** @var Ess_M2ePro_Model_Amazon_Template_Description $template */
+        $template = Mage::getModel('M2ePro/Amazon_Template_Description')->load($templateId);
+        $template->setSynchStatusNeed($template->getDataSnapshot(),array());
+
         $messages[] = Mage::helper('M2ePro')->__(
             'Description Policy was successfully assigned to %count% Products',
             count($filteredProductsIdsByType));
@@ -1105,46 +1372,46 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             $productsIds = explode(',', $productsIds);
         }
 
-        // getting correct ids without parents children
         $productsIdsTemp = $this->filterProductsForMapOrUnmapDescriptionTemplateByChunks($productsIds);
 
-        $message = Mage::helper('M2ePro')->__('Description Policy was successfully unassigned.');
-        $type = 'success';
+        $messages = array();
 
         if (count($productsIdsTemp) == 0) {
-            $message = '<p>'
-                . Mage::helper('M2ePro')->__(
+            $messages[] = array(
+                'type' => 'warning',
+                'text' => '<p>' . Mage::helper('M2ePro')->__(
                     'Description Policy cannot be unassigned from some Products because they are
-                     participating in the new ASIN(s)/ISBN(s) creation.')
-                . '</p>';
-            $type = 'warning';
+                     participating in the new ASIN(s)/ISBN(s) creation.') . '</p>'
+            );
         } else {
-            $productsIdsTemp = $this->filterLockedProducts($productsIdsTemp);
+            $productsIdsLocked = $this->filterLockedProducts($productsIdsTemp);
 
-            if (count($productsIdsTemp) < count($productsIds)) {
-                $message = '<p>'
-                    . Mage::helper('M2ePro')->__(
-                        'Description Policy cannot be unassigned because the Products are in action or
-                         in the process of new ASIN(s)/ISBN(s) creation.')
-                    . '</p>';
-                $type = 'warning';
+            if (count($productsIdsLocked) < count($productsIds)) {
+                $messages[] = array(
+                    'type' => 'warning',
+                    'text' => '<p>' . Mage::helper('M2ePro')->__(
+                        'Description Policy cannot be unassigned because the Products are in Action or
+                         in the process of new ASIN(s)/ISBN(s) Creation.'). '</p>'
+                );
             }
         }
 
-        if (!empty($productsIdsTemp)) {
-            // getting correct ids with parents children
-            $productsIdsTemp = $this->filterProductsForMapOrUnmapDescriptionTemplateByChunks($productsIdsTemp);
-            $this->setDescriptionTemplateFroProductsByChunks($productsIdsTemp, NULL);
-            $this->runProcessorForParents($productsIdsTemp);
+        if (!empty($productsIdsLocked)) {
+            $messages[] = array(
+                'type' => 'success',
+                'text' => Mage::helper('M2ePro')->__('Description Policy was successfully unassigned.')
+            );
+
+            $this->setDescriptionTemplateFroProductsByChunks($productsIdsLocked, NULL);
+            $this->runProcessorForParents($productsIdsLocked);
         }
 
         return $this->getResponse()->setBody(json_encode(array(
-            'type' => $type,
-            'message' => $message
+            'messages' => $messages
         )));
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function viewTemplateDescriptionsGridAction()
     {
@@ -1160,14 +1427,14 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         }
 
         $grid = $this->loadLayout()->getLayout()
-            ->createBlock('M2ePro/adminhtml_common_amazon_listing_templateDescription_grid');
+            ->createBlock('M2ePro/adminhtml_common_amazon_listing_template_description_grid');
         $grid->setCheckNewAsinAccepted($checkNewAsinAccepted);
         $grid->setProductsIds($productsIds);
 
         return $this->getResponse()->setBody($grid->toHtml());
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function validateProductsForTemplateDescriptionAssignAction()
     {
@@ -1197,9 +1464,20 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             );
         }
 
-        $filteredProductsIdsByType = $variationHelper->filterProductsByMagentoProductType($productsIdsTemp);
+        $productsIdsLocked = $this->filterLockedProducts($productsIdsTemp);
 
-        if (count($productsIdsTemp) != count($filteredProductsIdsByType)) {
+        if (count($productsIdsTemp) != count($productsIdsLocked)) {
+            $messages[] = array(
+                'type' => 'warning',
+                'text' => Mage::helper('M2ePro')->__(
+                    'Description Policy cannot be assigned because the Products are in Action.'
+                )
+            );
+        }
+
+        $filteredProductsIdsByType = $variationHelper->filterProductsByMagentoProductType($productsIdsLocked);
+
+        if (count($productsIdsLocked) != count($filteredProductsIdsByType)) {
             $messages[] = array(
                 'type' => 'warning',
                 'text' => Mage::helper('M2ePro')->__(
@@ -1216,8 +1494,8 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         }
 
         $mainBlock = $this->loadLayout()->getLayout()
-            ->createBlock('M2ePro/adminhtml_common_amazon_listing_templateDescription_main');
-        if (!empty($messages)){
+            ->createBlock('M2ePro/adminhtml_common_amazon_listing_template_description_main');
+        if (!empty($messages)) {
             $mainBlock->setMessages($messages);
         }
 
@@ -1228,7 +1506,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         )));
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function getDescriptionTemplatesListAction()
     {
@@ -1251,7 +1529,163 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         return $this->getResponse()->setBody(json_encode($descriptionTemplates));
     }
 
-    //#############################################
+    //########################################
+
+    public function viewTemplateShippingOverridePopupAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+
+        if (empty($productsIds)) {
+            return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (!is_array($productsIds)) {
+            $productsIds = explode(',', $productsIds);
+        }
+
+        $messages = array();
+        $productsIdsLocked = $this->filterLockedProducts($productsIds);
+
+        if (count($productsIdsLocked) < count($productsIds)) {
+            $messages[] = array(
+                'type' => 'warning',
+                'text' => '<p>' . Mage::helper('M2ePro')->__(
+                    'The Shipping Override Policy was not assigned because the Products have In Action Status.'
+                    ). '</p>'
+            );
+        }
+
+        if (empty($productsIdsLocked)) {
+            return $this->getResponse()->setBody(json_encode(array(
+                'messages' => $messages
+            )));
+        }
+
+        $mainBlock = $this->loadLayout()->getLayout()
+            ->createBlock('M2ePro/adminhtml_common_amazon_listing_template_shippingOverride');
+        if (!empty($messages)) {
+            $mainBlock->setMessages($messages);
+        }
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'data' => $mainBlock->toHtml(),
+            'messages' => $messages,
+            'products_ids' => implode(',', $productsIdsLocked)
+        )));
+    }
+
+    public function viewTemplateShippingOverrideGridAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+        $marketplaceId = $this->getRequest()->getParam('marketplace_id');
+
+        if (empty($productsIds) && empty($marketplaceId)) {
+            return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (empty($marketplaceId)) {
+            if (!is_array($productsIds)) {
+                $productsIds = explode(',', $productsIds);
+            }
+
+            /** @var $listingProduct Ess_M2ePro_Model_Listing_Product */
+            $listingProduct = Mage::helper('M2ePro/Component_Amazon')->getObject('Listing_Product', $productsIds[0]);
+            $marketplaceId = $listingProduct->getListing()->getMarketplaceId();
+        }
+
+        $grid = $this->loadLayout()->getLayout()
+            ->createBlock('M2ePro/adminhtml_common_amazon_listing_template_shippingOverride_grid');
+        $grid->setMarketplaceId($marketplaceId);
+
+        return $this->getResponse()->setBody($grid->toHtml());
+    }
+
+    // ---------------------------------------
+
+    public function assignShippingOverrideTemplateAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+        $templateId = $this->getRequest()->getParam('template_id');
+
+        if (empty($productsIds) || empty($templateId)) {
+            return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (!is_array($productsIds)) {
+            $productsIds = explode(',', $productsIds);
+        }
+
+        $messages = array();
+        $productsIdsLocked = $this->filterLockedProducts($productsIds);
+
+        if (count($productsIdsLocked) < count($productsIds)) {
+            $messages[] = array(
+                'type' => 'warning',
+                'text' => '<p>' . Mage::helper('M2ePro')->__(
+                        'Shipping Override Policy cannot be assigned from some Products
+                         because the Products are in Action'). '</p>'
+            );
+        }
+
+        if (!empty($productsIdsLocked)) {
+            $messages[] = array(
+                'type' => 'success',
+                'text' => Mage::helper('M2ePro')->__('Shipping Override Policy was successfully assigned.')
+            );
+
+            $this->setShippingOverrideTemplateForProducts($productsIdsLocked, $templateId);
+            $this->runProcessorForParents($productsIdsLocked);
+
+            /** @var Ess_M2ePro_Model_Amazon_Template_ShippingOverride $template */
+            $template = Mage::getModel('M2ePro/Amazon_Template_ShippingOverride')->load($templateId);
+            $template->setSynchStatusNeed($template->getDataSnapshot(),array());
+        }
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'messages' => $messages
+        )));
+    }
+
+    public function unassignShippingOverrideTemplateAction()
+    {
+        $productsIds = $this->getRequest()->getParam('products_ids');
+
+        if (empty($productsIds)) {
+            return $this->getResponse()->setBody('You should provide correct parameters.');
+        }
+
+        if (!is_array($productsIds)) {
+            $productsIds = explode(',', $productsIds);
+        }
+
+        $messages = array();
+        $productsIdsLocked = $this->filterLockedProducts($productsIds);
+
+        if (count($productsIdsLocked) < count($productsIds)) {
+            $messages[] = array(
+                'type' => 'warning',
+                'text' => '<p>' . Mage::helper('M2ePro')->__(
+                        'Shipping Override Policy cannot be unassigned from some Products
+                         because the Products are in Action'). '</p>'
+            );
+        }
+
+        if (!empty($productsIdsLocked)) {
+            $messages[] = array(
+                'type' => 'success',
+                'text' => Mage::helper('M2ePro')->__('Shipping Override Policy was successfully unassigned.')
+            );
+
+            $this->setShippingOverrideTemplateForProducts($productsIdsLocked, NULL);
+            $this->runProcessorForParents($productsIdsLocked);
+        }
+
+        return $this->getResponse()->setBody(json_encode(array(
+            'messages' => $messages
+        )));
+    }
+
+    //########################################
 
     protected function setRuleData($prefix)
     {
@@ -1261,7 +1695,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         $prefix .= isset($listingData['id']) ? '_'.$listingData['id'] : '';
         Mage::helper('M2ePro/Data_Global')->setValue('rule_prefix', $prefix);
 
-        //----------------------------------------------
+        // ---------------------------------------
         $useCustomOptions = true;
         $magentoViewMode = Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View::VIEW_MODE_MAGENTO;
         $sessionParamName = Mage::getBlockSingleton('M2ePro/Adminhtml_Common_Amazon_Listing_View')->getId()
@@ -1272,7 +1706,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
             $magentoViewMode == Mage::helper('M2ePro/Data_Session')->getValue($sessionParamName)) {
             $useCustomOptions = false;
         }
-        //----------------------------------------------
+        // ---------------------------------------
 
         /** @var $ruleModel Ess_M2ePro_Model_Magento_Product_Rule */
         $ruleModel = Mage::getModel('M2ePro/Amazon_Magento_Product_Rule')->setData(
@@ -1311,7 +1745,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         return $prefix;
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     /**
      * @param $productsIdsParam
@@ -1410,7 +1844,20 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         );
     }
 
-    //-----------------------------------------
+    //########################################
+
+    protected function setShippingOverrideTemplateForProducts($productsIds, $templateId)
+    {
+        $connWrite = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $tableAmazonListingProduct = Mage::getSingleton('core/resource')->getTableName('m2epro_amazon_listing_product');
+
+        return $connWrite->update($tableAmazonListingProduct, array(
+                'template_shipping_override_id' => $templateId
+            ), '`listing_product_id` IN ('.implode(',', $productsIds).')'
+        );
+    }
+
+    //########################################
 
     protected function mapToNewAsinByChunks($productsIds)
     {
@@ -1435,7 +1882,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         );
     }
 
-    //#############################################
+    //########################################
 
     protected function runProcessorForParents($productsIds)
     {
@@ -1458,5 +1905,5 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_ListingController
         }
     }
 
-    //#############################################
+    //########################################
 }

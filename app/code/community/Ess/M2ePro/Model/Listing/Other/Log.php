@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
@@ -17,18 +19,18 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
     const _ACTION_STOP_PRODUCT = 'Stop Product';
 
     const ACTION_ADD_LISTING = 4;
-    const _ACTION_ADD_LISTING = 'Add new listing';
+    const _ACTION_ADD_LISTING = 'Add new Listing';
     const ACTION_DELETE_LISTING = 5;
-    const _ACTION_DELETE_LISTING = 'Delete existing listing';
+    const _ACTION_DELETE_LISTING = 'Delete existing Listing';
 
     const ACTION_MAP_LISTING = 6;
-    const _ACTION_MAP_LISTING = 'Map listing to Magento Product';
+    const _ACTION_MAP_LISTING = 'Map Listing to Magento Product';
 
     const ACTION_UNMAP_LISTING = 8;
-    const _ACTION_UNMAP_LISTING = 'Unmap listing from Magento Product';
+    const _ACTION_UNMAP_LISTING = 'Unmap Listing from Magento Product';
 
     const ACTION_MOVE_LISTING = 7;
-    const _ACTION_MOVE_LISTING = 'Move to existing M2E Pro listing';
+    const _ACTION_MOVE_LISTING = 'Move to existing M2E Pro Listing';
 
     const ACTION_CHANGE_PRODUCT_PRICE = 10;
     const _ACTION_CHANGE_PRODUCT_PRICE = 'Change of Product Price in Magento Store';
@@ -37,7 +39,7 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
     const ACTION_CHANGE_PRODUCT_QTY = 12;
     const _ACTION_CHANGE_PRODUCT_QTY = 'Change of Product QTY in Magento Store';
     const ACTION_CHANGE_PRODUCT_STOCK_AVAILABILITY = 13;
-    const _ACTION_CHANGE_PRODUCT_STOCK_AVAILABILITY = 'Change of Product stock availability in Magento Store';
+    const _ACTION_CHANGE_PRODUCT_STOCK_AVAILABILITY = 'Change of Product Stock availability in Magento Store';
     const ACTION_CHANGE_PRODUCT_STATUS = 14;
     const _ACTION_CHANGE_PRODUCT_STATUS = 'Change of Product status in Magento Store';
 
@@ -48,12 +50,12 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
     const _ACTION_CHANGE_PRODUCT_SPECIAL_PRICE_TO_DATE = 'Change of Product Special Price to date in Magento Store';
 
     const ACTION_CHANGE_CUSTOM_ATTRIBUTE = 17;
-    const _ACTION_CHANGE_CUSTOM_ATTRIBUTE = 'Change of Product custom attribute in Magento Store';
+    const _ACTION_CHANGE_CUSTOM_ATTRIBUTE = 'Change of Product Custom Attribute in Magento Store';
 
-    const ACTION_CHANGE_STATUS_ON_CHANNEL = 18;
-    const _ACTION_CHANGE_STATUS_ON_CHANNEL = 'Change Item status on Channel';
+    const ACTION_CHANNEL_CHANGE = 18;
+    const _ACTION_CHANNEL_CHANGE = 'Change Item on Channel';
 
-    //####################################
+    //########################################
 
     public function _construct()
     {
@@ -61,23 +63,24 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
         $this->_init('M2ePro/Listing_Other_Log');
     }
 
-    //####################################
+    //########################################
 
     public function addGlobalMessage($initiator = Ess_M2ePro_Helper_Data::INITIATOR_UNKNOWN,
                                      $actionId = NULL,
                                      $action = NULL,
                                      $description = NULL,
                                      $type = NULL,
-                                     $priority = NULL)
+                                     $priority = NULL,
+                                     array $additionalData = array())
     {
         $dataForAdd = $this->makeDataForAdd(NULL,
-                                            $this->makeAndGetCreator(),
                                             $initiator,
                                             $actionId,
                                             $action,
                                             $description,
                                             $type,
-                                            $priority);
+                                            $priority,
+                                            $additionalData);
 
         $this->createMessage($dataForAdd);
     }
@@ -91,7 +94,6 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
                                       $priority = NULL)
     {
         $dataForAdd = $this->makeDataForAdd($listingOtherId,
-                                            $this->makeAndGetCreator(),
                                             $initiator,
                                             $actionId,
                                             $action,
@@ -102,7 +104,7 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
         $this->createMessage($dataForAdd);
     }
 
-    //####################################
+    //########################################
 
     public function getActionTitle($type)
     {
@@ -114,7 +116,7 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
         return $this->getActionsTitlesByClass(__CLASS__,'ACTION_');
     }
 
-    //------------------------------------
+    // ---------------------------------------
 
     public function clearMessages($listingOtherId = NULL)
     {
@@ -127,7 +129,7 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
         return 'other_listings';
     }
 
-    //####################################
+    //########################################
 
     protected function createMessage($dataForAdd)
     {
@@ -144,8 +146,7 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
             }
 
             if ($this->componentMode == Ess_M2ePro_Helper_Component_Amazon::NICK ||
-                $this->componentMode == Ess_M2ePro_Helper_Component_Buy::NICK ||
-                $this->componentMode == Ess_M2ePro_Helper_Component_Play::NICK) {
+                $this->componentMode == Ess_M2ePro_Helper_Component_Buy::NICK) {
                 $dataForAdd['identifier'] = $listingOther->getChildObject()->getGeneralId();
             }
         }
@@ -159,13 +160,13 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
     }
 
     protected function makeDataForAdd($listingOtherId,
-                                      $creator,
                                       $initiator = Ess_M2ePro_Helper_Data::INITIATOR_UNKNOWN,
                                       $actionId = NULL,
                                       $action = NULL,
                                       $description = NULL,
                                       $type = NULL,
-                                      $priority = NULL)
+                                      $priority = NULL,
+                                      array $additionalData = array())
     {
         $dataForAdd = array();
 
@@ -175,7 +176,6 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
             $dataForAdd['listing_other_id'] = NULL;
         }
 
-        $dataForAdd['creator'] = $creator;
         $dataForAdd['initiator'] = $initiator;
 
         if (!is_null($actionId)) {
@@ -208,8 +208,10 @@ class Ess_M2ePro_Model_Listing_Other_Log extends Ess_M2ePro_Model_Log_Abstract
             $dataForAdd['priority'] = self::PRIORITY_LOW;
         }
 
+        $dataForAdd['additional_data'] = json_encode($additionalData);
+
         return $dataForAdd;
     }
 
-    //####################################
+    //########################################
 }

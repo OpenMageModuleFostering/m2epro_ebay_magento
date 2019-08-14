@@ -1,19 +1,59 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
     extends Ess_M2ePro_Model_Connector_Buy_Orders_Get_ItemsResponser
 {
-    // ##########################################################
-
     /** @var Ess_M2ePro_Model_Synchronization_Log $synchronizationLog */
     protected $synchronizationLog = NULL;
 
-    // ##########################################################
+    //########################################
 
+    protected function processResponseMessages(array $messages = array())
+    {
+        parent::processResponseMessages($messages);
+
+        foreach ($this->messages as $message) {
+
+            if (!$this->isMessageError($message) && !$this->isMessageWarning($message)) {
+                continue;
+            }
+
+            $logType = $this->isMessageError($message) ? Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR
+                                                       : Ess_M2ePro_Model_Log_Abstract::TYPE_WARNING;
+
+            $this->getSynchronizationLog()->addMessage(
+                Mage::helper('M2ePro')->__($message[Ess_M2ePro_Model_Connector_Protocol::MESSAGE_TEXT_KEY]),
+                $logType,
+                Ess_M2ePro_Model_Log_Abstract::PRIORITY_HIGH
+            );
+        }
+    }
+
+    protected function isNeedToParseResponseData($responseBody)
+    {
+        if (!parent::isNeedToParseResponseData($responseBody)) {
+            return false;
+        }
+
+        if ($this->hasErrorMessages()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    //########################################
+
+    /**
+     * @param Ess_M2ePro_Model_Processing_Request $processingRequest
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
     public function unsetProcessingLocks(Ess_M2ePro_Model_Processing_Request $processingRequest)
     {
         parent::unsetProcessingLocks($processingRequest);
@@ -50,12 +90,7 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
     {
         try {
 
-            $account = $this->getAccount();
-            if (!$account->getChildObject()->isOrdersModeEnabled()) {
-                return;
-            }
-
-            $buyOrders = $this->processBuyOrders($response, $account);
+            $buyOrders = $this->processBuyOrders($response, $this->getAccount());
             if (empty($buyOrders)) {
                 return;
             }
@@ -74,7 +109,7 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
         }
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     private function processBuyOrders($response, Ess_M2ePro_Model_Account $account)
     {
@@ -97,13 +132,19 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
     {
         foreach ($buyOrders as $order) {
             /** @var $order Ess_M2ePro_Model_Order */
+
+            if ($this->isOrderChangedInParallelProcess($order)) {
+                continue;
+            }
+
             if ($order->canCreateMagentoOrder()) {
                 try {
                     $order->createMagentoOrder();
-                } catch (Exception $e) {
-                    Mage::helper('M2ePro/Module_Exception')->process($e);
+                } catch (Exception $exception) {
+                    continue;
                 }
             }
+
             if ($order->getChildObject()->canCreateInvoice()) {
                 $order->createInvoice();
             }
@@ -113,7 +154,25 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
         }
     }
 
-    // ##########################################################
+    /**
+     * This is going to protect from Magento Orders duplicates.
+     * (Is assuming that there may be a parallel process that has already created Magento Order)
+     *
+     * But this protection is not covering a cases when two parallel cron processes are isolated by mysql transactions
+     */
+    private function isOrderChangedInParallelProcess(Ess_M2ePro_Model_Order $order)
+    {
+        /** @var Ess_M2ePro_Model_Order $dbOrder */
+        $dbOrder = Mage::getModel('M2ePro/Order')->load($order->getId());
+
+        if ($dbOrder->getMagentoOrderId() != $order->getMagentoOrderId()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Account
@@ -123,7 +182,7 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
         return $this->getObjectByParam('Account','account_id');
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     protected function getSynchronizationLog()
     {
@@ -138,5 +197,5 @@ class Ess_M2ePro_Model_Buy_Synchronization_Orders_Receive_Responser
         return $this->synchronizationLog;
     }
 
-    // ##########################################################
+    //########################################
 }

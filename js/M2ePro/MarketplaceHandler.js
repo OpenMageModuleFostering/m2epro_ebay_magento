@@ -1,7 +1,7 @@
 MarketplaceHandler = Class.create();
 MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function(synchProgressObj, storedStatuses)
     {
@@ -16,7 +16,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         this.synchSuccess = 0;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getStoredStatuses: function()
     {
@@ -50,7 +50,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         return allStatuses;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     moveChildBlockContent: function(childBlockId, destinationBlockId)
     {
@@ -62,7 +62,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         return true;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     saveAction: function()
     {
@@ -104,11 +104,11 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
             }, 1000);
 
         } else {
-            MagentoMessageObj.addError(M2ePro.translator.translate('You must select at least one site you will work with.'));
+            MagentoMessageObj.addError(M2ePro.translator.translate('You must select at least one Site you will work with.'));
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     saveSettings: function()
     {
@@ -119,7 +119,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     runSingleSynchronization: function(runNowButton)
     {
@@ -188,7 +188,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
             var marketplaceState = statusesForSynch[i].status;
 
             if (!marketplaceId) {
-                return false;
+                continue;
             }
 
             this.changeStatusInfo(marketplaceId, marketplaceState);
@@ -212,7 +212,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         return true;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     runNextMarketplaceNow: function()
     {
@@ -292,7 +292,7 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         return true;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     changeStatus: function(element)
     {
@@ -342,5 +342,5 @@ MarketplaceHandler.prototype = Object.extend(new CommonHandler(), {
         }
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

@@ -1,24 +1,28 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_Block_Widget_Grid_Container
 {
+    //########################################
+
     public function __construct()
     {
         parent::__construct();
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('buyListingView');
         $this->_blockGroup = 'M2ePro';
         $this->_controller = 'adminhtml_common_buy_listing_view';
-        //------------------------------
+        // ---------------------------------------
 
         // Set header text
-        //------------------------------
+        // ---------------------------------------
         $listingData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         if (!Mage::helper('M2ePro/View_Common_Component')->isSingleActiveComponent()) {
@@ -31,45 +35,45 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
         }
 
         $this->_headerText = $headerText;
-        //------------------------------
+        // ---------------------------------------
 
         // Set buttons actions
-        //------------------------------
+        // ---------------------------------------
         $this->removeButton('back');
         $this->removeButton('reset');
         $this->removeButton('delete');
         $this->removeButton('add');
         $this->removeButton('save');
         $this->removeButton('edit');
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $url = $this->getUrl('*/adminhtml_common_log/listing', array(
             'id' => $listingData['id'],
-            'channel' => Ess_M2ePro_Block_Adminhtml_Common_Log_Tabs::TAB_ID_BUY
+            'channel' => Ess_M2ePro_Block_Adminhtml_Common_Log_Tabs::CHANNEL_ID_BUY
         ));
         $this->_addButton('view_log', array(
             'label'   => Mage::helper('M2ePro')->__('View Log'),
             'onclick' => 'window.open(\'' . $url . '\')',
             'class'   => 'button_link'
         ));
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $this->_addButton('edit_settings', array(
             'label'   => Mage::helper('M2ePro')->__('Edit Settings'),
             'onclick' => '',
             'class'   => 'drop_down edit_settings_drop_down'
         ));
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $this->_addButton('add_products', array(
             'label'     => Mage::helper('M2ePro')->__('Add Products'),
             'onclick'   => '',
             'class'     => 'add drop_down add_products_drop_down'
         ));
-        //------------------------------
+        // ---------------------------------------
     }
 
     protected function _toHtml()
@@ -88,7 +92,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
         /** @var $helper Ess_M2ePro_Helper_Data */
         $helper = Mage::helper('M2ePro');
 
-        //------------------------------
+        // ---------------------------------------
         $urls = $helper->getControllerActions(
             'adminhtml_common_listing_autoAction', array(
                 'listing_id' => $this->getRequest()->getParam('id'),
@@ -107,7 +111,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
         $urls[$path] = $this->getUrl('*/' . $path);
 
         $urls = json_encode($urls);
-        //------------------------------
+        // ---------------------------------------
 
         $component = Ess_M2ePro_Helper_Component_Buy::NICK;
         $layout = $this->getLayout();
@@ -120,7 +124,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
 
         $logViewUrl = $this->getUrl('*/adminhtml_common_log/listing', array(
             'id' => $listingData['id'],
-            'channel' => Ess_M2ePro_Block_Adminhtml_Common_Log_Tabs::TAB_ID_BUY,
+            'channel' => Ess_M2ePro_Block_Adminhtml_Common_Log_Tabs::CHANNEL_ID_BUY,
             'back'=>$helper->makeBackUrlParam('*/adminhtml_common_buy_listing/view', array('id' =>$listingData['id']))
         ));
         $getErrorsSummary = $this->getUrl('*/adminhtml_listing/getErrorsSummary');
@@ -150,13 +154,13 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
 
         $taskCompletedMessage = $helper->escapeJs($helper->__('Task completed. Please wait ...'));
         $taskCompletedSuccessMessage = $helper->escapeJs(
-            $helper->__('"%task_title%" task has successfully submitted to be processed.')
+            $helper->__('"%task_title%" Task has successfully submitted to be processed.')
         );
         $taskCompletedWarningMessage = $helper->escapeJs($helper->__(
-            '"%task_title%" task has completed with warnings. <a target="_blank" href="%url%">View log</a> for details.'
+            '"%task_title%" Task has completed with warnings. <a target="_blank" href="%url%">View Log</a> for details.'
         ));
         $taskCompletedErrorMessage = $helper->escapeJs($helper->__(
-            '"%task_title%" task has completed with errors. <a target="_blank" href="%url%">View log</a> for details.'
+            '"%task_title%" Task has completed with errors. <a target="_blank" href="%url%">View Log</a> for details.'
         ));
 
         $lockedObjNoticeMessage = $helper->escapeJs(
@@ -189,18 +193,18 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
             ->escapeJs(Mage::helper('M2ePro')
             ->__('Adding New SKU On Rakuten.com'));
 
-        $successfullyMovedMessage = $helper->escapeJs($helper->__('Product(s) was successfully moved.'));
+        $successfullyMovedMessage = $helper->escapeJs($helper->__('Product(s) was successfully Moved.'));
         $productsWereNotMovedMessage = $helper->escapeJs(
-            $helper->__('Product(s) was not moved. <a target="_blank" href="%url%">View log</a> for details.')
+            $helper->__('Product(s) was not Moved. <a target="_blank" href="%url%">View Log</a> for details.')
         );
         $someProductsWereNotMovedMessage = $helper->escapeJs(
-            $helper->__('Some Product(s) was not moved. <a target="_blank" href="%url%">View log</a> for details.')
+            $helper->__('Some Product(s) was not Moved. <a target="_blank" href="%url%">View Log</a> for details.')
         );
 
         $selectItemsMessage = $helper->escapeJs(
-            $helper->__('Please select the Products you want to perform the action on.')
+            $helper->__('Please select the Products you want to perform the Action on.')
         );
-        $selectActionMessage = $helper->escapeJs($helper->__('Please select action.'));
+        $selectActionMessage = $helper->escapeJs($helper->__('Please select Action.'));
 
         $successWord = $helper->escapeJs($helper->__('Success'));
         $noticeWord = $helper->escapeJs($helper->__('Notice'));
@@ -225,7 +229,6 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
         $marketplaceInstance = Mage::helper('M2ePro/Component_Buy')->getCachedObject('Marketplace',$marketplaceId);
         $marketplace = json_encode($marketplaceInstance->getData());
 
-        $isMarketplaceSynchronized = json_encode($marketplaceInstance->getChildObject()->isSynchronized());
         $marketplaceSynchUrl = $this->getUrl(
             '*/adminhtml_common_marketplace/index',
             array('tab' => Ess_M2ePro_Block_Adminhtml_Common_Marketplace::TAB_ID_RAKUTEN)
@@ -235,7 +238,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
                 'In order to use New SKU functionality, please re-synchronize Marketplace data.'
             ).' '.
                 $helper->__(
-                    'Press "Save And Update" button after redirect on Marketplace page.'
+                    'Press "Save And Update" Button after redirect on Marketplace Page.'
                 )
         );
 
@@ -247,16 +250,16 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
             $helper->__('Server is currently unavailable. Please try again later.')
         );
 
-        $noVariationsLeftText = $helper->__('All variations are already added.');
+        $noVariationsLeftText = $helper->__('All Variations are already added.');
 
         $translations = json_encode(array(
             'Auto Add/Remove Rules' => $helper->__('Auto Add/Remove Rules'),
             'Based on Magento Categories' => $helper->__('Based on Magento Categories'),
-            'You must select at least 1 category.' => $helper->__('You must select at least 1 category.'),
-            'Rule with the same title already exists.' => $helper->__('Rule with the same title already exists.')
+            'You must select at least 1 Category.' => $helper->__('You must select at least 1 Category.'),
+            'Rule with the same Title already exists.' => $helper->__('Rule with the same Title already exists.')
         ));
 
-        $javascriptsMain = <<<JAVASCRIPT
+        $javascriptsMain = <<<HTML
 <script type="text/javascript">
 
     if (typeof M2ePro == 'undefined') {
@@ -358,11 +361,10 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
     M2ePro.customData.ignoreListings = '{$ignoreListings}';
 
     M2ePro.customData.marketplace = {$marketplace};
-    M2ePro.customData.isMarketplaceSynchronized = {$isMarketplaceSynchronized};
 
     Event.observe(window, 'load', function() {
 
-        ListingGridHandlerObj = new BuyListingGridHandler(
+        ListingGridHandlerObj = new CommonBuyListingGridHandler(
             'buyListingViewGrid{$listingData['id']}',
             {$listingData['id']}
         );
@@ -374,7 +376,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
         ListingProgressBarObj = new ProgressBar('listing_view_progress_bar');
         GridWrapperObj = new AreaWrapper('listing_view_content_container');
 
-        ListingProductVariationHandlerObj = new ListingProductVariationHandler(M2ePro,
+        ListingProductVariationHandlerObj = new CommonListingProductVariationHandler(M2ePro,
                                                                                ListingGridHandlerObj);
 
         if (M2ePro.productsIdsForList) {
@@ -390,40 +392,40 @@ class Ess_M2ePro_Block_Adminhtml_Common_Buy_Listing_View extends Mage_Adminhtml_
     });
 
 </script>
-JAVASCRIPT;
+HTML;
 
         $helpBlock = $layout->createBlock('M2ePro/adminhtml_common_buy_listing_view_help');
         $productSearchMenuBlock = $layout->createBlock('M2ePro/adminhtml_common_buy_listing_productSearch_menu');
         $productSearchBlock = $layout->createBlock('M2ePro/adminhtml_common_buy_listing_productSearch_main');
 
-        //------------------------------
+        // ---------------------------------------
         $data = array(
             'target_css_class' => 'edit_settings_drop_down',
             'items'            => $this->getTemplatesButtonDropDownItems()
         );
         $templatesDropDownBlock = $layout->createBlock('M2ePro/adminhtml_widget_button_dropDown');
         $templatesDropDownBlock->setData($data);
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $data = array(
             'target_css_class' => 'add_products_drop_down',
             'items'            => $this->getAddProductsDropDownItems()
         );
         $addProductsDropDownBlock = $layout->createBlock('M2ePro/adminhtml_widget_button_dropDown');
         $addProductsDropDownBlock->setData($data);
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $listingSwitcher = $this->getLayout()->createBlock('M2ePro/adminhtml_common_buy_listing_view_listingSwitcher');
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $viewHeaderBlock = $this->getLayout()->createBlock(
             'M2ePro/adminhtml_listing_view_header','',
             array('listing' => Mage::helper('M2ePro/Component_Buy')->getCachedObject('Listing',$listingData['id']))
         );
-        //------------------------------
+        // ---------------------------------------
 
         return $javascriptsMain
             . $templatesDropDownBlock->toHtml()
@@ -440,7 +442,7 @@ JAVASCRIPT;
     {
         $listingData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
-        //------------------------------
+        // ---------------------------------------
         $collection = Mage::getModel('M2ePro/Listing')->getCollection();
         $collection->addFieldToFilter('component_mode', Ess_M2ePro_Helper_Component_Buy::NICK);
         $collection->addFieldToFilter('id', array('neq' => $listingData['id']));
@@ -454,13 +456,13 @@ JAVASCRIPT;
                 'url' => $this->getUrl('*/*/view', array('id' => $item->getId()))
             );
         }
-        //------------------------------
+        // ---------------------------------------
 
         if (count($items) == 0) {
             return parent::getHeaderHtml();
         }
 
-        //------------------------------
+        // ---------------------------------------
         $data = array(
             'target_css_class' => 'listing-profile-title',
             'style' => 'max-height: 120px; overflow: auto; width: 200px;',
@@ -468,19 +470,19 @@ JAVASCRIPT;
         );
         $dropDownBlock = $this->getLayout()->createBlock('M2ePro/adminhtml_widget_button_dropDown');
         $dropDownBlock->setData($data);
-        //------------------------------
+        // ---------------------------------------
 
         return parent::getHeaderHtml() . $dropDownBlock->toHtml();
     }
 
     public function getHeaderText()
     {
-        //------------------------------
+        // ---------------------------------------
         $changeProfile = Mage::helper('M2ePro')->__('Change Listing');
         $headerText = parent::getHeaderText();
         $listingData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
         $listingTitle = Mage::helper('M2ePro')->escapeHtml($listingData['title']);
-        //------------------------------
+        // ---------------------------------------
 
         return <<<HTML
 {$headerText} <a href="javascript: void(0);"
@@ -503,7 +505,7 @@ HTML;
             )
         );
 
-        //------------------------------
+        // ---------------------------------------
         $url = $this->getUrl(
             '*/adminhtml_common_buy_listing/edit',
             array(
@@ -517,9 +519,9 @@ HTML;
             'label'     => Mage::helper('M2ePro')->__('Selling Settings'),
             'target'    => '_blank'
         );
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $url = $this->getUrl(
             '*/adminhtml_common_buy_listing/edit',
             array(
@@ -533,15 +535,15 @@ HTML;
             'label' => Mage::helper('M2ePro')->__('Search Settings'),
             'target' => '_blank'
         );
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $items[] = array(
             'url' => 'javascript: void(0);',
             'onclick' => 'ListingAutoActionHandlerObj.loadAutoActionHtml();',
             'label' => Mage::helper('M2ePro')->__('Auto Add/Remove Rules')
         );
-        //------------------------------
+        // ---------------------------------------
 
         return $items;
     }
@@ -555,7 +557,7 @@ HTML;
             'id' => $listingData['id']
         ));
 
-        //------------------------------
+        // ---------------------------------------
         $url = $this->getUrl(
             '*/adminhtml_common_listing_productAdd/index',
             array(
@@ -571,9 +573,9 @@ HTML;
             'url' => $url,
             'label' => Mage::helper('M2ePro')->__('From Products List')
         );
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $url = $this->getUrl(
             '*/adminhtml_common_listing_productAdd/index',
             array(
@@ -589,8 +591,10 @@ HTML;
             'url' => $url,
             'label' => Mage::helper('M2ePro')->__('From Categories')
         );
-        //------------------------------
+        // ---------------------------------------
 
         return $items;
     }
+
+    //########################################
 }

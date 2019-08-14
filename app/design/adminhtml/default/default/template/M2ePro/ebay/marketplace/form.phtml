@@ -13,16 +13,16 @@
 
     M2ePro.translator.add(<?php echo json_encode(array(
         'Settings have been saved.' => Mage::helper('M2ePro')->__('Settings have been saved.'),
-        'You must select at least one site you will work with.' => Mage::helper('M2ePro')->__('You must select at least one site you will work with.'),
+        'You must select at least one Site you will work with.' => Mage::helper('M2ePro')->__('You must select at least one Site you will work with.'),
 
         'Another Synchronization Is Already Running.' => Mage::helper('M2ePro')->__('Another Synchronization Is Already Running.'),
         'Getting information. Please wait ...' => Mage::helper('M2ePro')->__('Getting information. Please wait ...'),
         'Preparing to start. Please wait ...' => Mage::helper('M2ePro')->__('Preparing to start. Please wait ...'),
 
         'Synchronization has successfully ended.' => Mage::helper('M2ePro')->__('Synchronization has successfully ended.'),
-        'Synchronization ended with warnings. <a target="_blank" href="%url%">View log</a> for details.' => Mage::helper('M2ePro')->__('Synchronization ended with warnings. <a target="_blank" href="%url%">View log</a> for details.'),
-        'Synchronization ended with errors. <a target="_blank" href="%url%">View log</a> for details.' => Mage::helper('M2ePro')->__('Synchronization ended with errors. <a target="_blank" href="%url%">View log</a> for details.'),
-        'Some eBay categories were deleted from eBay. Click <a target="_blank" href="%url%">here</a> to check.' => Mage::helper('M2ePro')->__('Some eBay categories were deleted from eBay. Click <a target="_blank" href="%url%">here</a> to check.')
+        'Synchronization ended with warnings. <a target="_blank" href="%url%">View Log</a> for details.' => Mage::helper('M2ePro')->__('Synchronization ended with warnings. <a target="_blank" href="%url%">View Log</a> for details.'),
+        'Synchronization ended with errors. <a target="_blank" href="%url%">View Log</a> for details.' => Mage::helper('M2ePro')->__('Synchronization ended with errors. <a target="_blank" href="%url%">View Log</a> for details.'),
+        'Some eBay Categories were deleted from eBay. Click <a target="_blank" href="%url%">here</a> to check.' => Mage::helper('M2ePro')->__('Some eBay Categories were deleted from eBay. Click <a target="_blank" href="%url%">here</a> to check.')
     )); ?>);
 
     Event.observe(window, 'load', function() {
@@ -53,11 +53,12 @@
 <input name="form_key" value="<?php echo $this->getFormKey(); ?>" type="hidden" />
 
 <div id="<?php echo $this->getContainerId(); ?>">
+<?php foreach ($this->groups as $group) : ?>
 
-    <div class="entry-edit" id="magento_block_ebay_marketplaces" magento_block="no">
+    <div class="entry-edit" id="magento_block_ebay_marketplaces_group_<?php echo $group['id']; ?>" collapseable="no">
 
         <div class="entry-edit-head">
-            <h4 class="icon-head head-edit-form fieldset-legend"><?php echo Mage::helper('M2ePro')->__('eBay Sites'); ?></h4>
+            <h4 class="icon-head head-edit-form fieldset-legend"><?php echo Mage::helper('M2ePro')->__($group['title']); ?></h4>
         </div>
 
         <div class="fieldset">
@@ -73,7 +74,7 @@
                         $isFirst = true;
                     ?>
 
-                    <?php foreach($this->marketplaces as $marketplace) { ?>
+                    <?php foreach($group['marketplaces'] as $marketplace) { ?>
 
                         <?php if ($isFirst) {?>
 
@@ -143,14 +144,14 @@
                         </tr>
 
                     <?php } ?>
-
                 </table>
 
-           </div>
+            </div>
         </div>
 
     </div>
 
+<?php endforeach; ?>
 </div>
 
 </form>

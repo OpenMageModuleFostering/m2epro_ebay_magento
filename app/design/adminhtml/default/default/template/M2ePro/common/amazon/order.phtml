@@ -1,6 +1,11 @@
 <?php
     /** @var $this Ess_M2ePro_Block_Adminhtml_Common_Amazon_Order_View */
     echo $this->getChildHtml('item_edit');
+
+    $currency = $this->order->getData('currency');
+    if (empty($currency)) {
+        $currency = $this->order->getMarketplace()->getChildObject()->getDefaultCurrency();
+    }
 ?>
 
 <!-- ########################################################################################### -->
@@ -10,6 +15,12 @@
     M2ePro.url.add(<?php echo json_encode(array(
         'adminhtml_order/getDebugInformation' => $this->getUrl('M2ePro/adminhtml_order/getDebugInformation/', array('id' => $this->getRequest()->getParam('id')))
     )); ?>);
+
+    <?php if ($this->getRequest()->getParam('show_merchant_fulfillment')): ?>
+    Event.observe(window, 'load', function() {
+        OrderMerchantFulfillmentHandlerObj.getPopupAction(<?php echo $this->order->getId(); ?>);
+    });
+    <?php endif; ?>
 
 </script>
 
@@ -21,6 +32,9 @@
         <div class="entry-edit-head">
             <h4 class="icon-head head-edit-form fieldset-legend">
                 <?php echo Mage::helper('M2ePro')->__('Amazon Order');?> # <?php echo $this->order->getData('amazon_order_id'); ?>
+                <?php if ($this->order->getChildObject()->isPrime()): ?>
+                    <img src="<?php echo $this->getSkinUrl('M2ePro/images/prime.png'); ?>" />
+                <?php endif; ?>
             </h4>
             <div style="float: right;">
                 <?php $url = Mage::helper('M2ePro/Component_Amazon')->getOrderUrl($this->order->getChildObject()->getAmazonOrderId(), $this->order->getMarketplaceId()); ?>
@@ -262,9 +276,9 @@
 
                                     <?php
                                         if (!$this->isCurrencyAllowed()) {
-                                            echo '<br/><b>' . Mage::helper('M2ePro')->__('Attention!') . '</b> ' . Mage::helper('M2ePro')->__('Order currency is not enabled in Magento. Please, enable it in System > Configuration > Currency Setup.');
+                                            echo '<br/><b>' . Mage::helper('M2ePro')->__('Attention!') . '</b> ' . Mage::helper('M2ePro')->__('Order Currency is not enabled in Magento. Please, enable it in System > Configuration > Currency Setup.');
                                         } elseif (!$this->hasCurrencyConversionRate()) {
-                                            echo '<br/><b>' . Mage::helper('M2ePro')->__('Attention!') . '</b> ' . Mage::helper('M2ePro')->__('There\'s no rate for Order currency in Magento. Please, add currency convert rate in System > Manage Currency > Rates.');
+                                            echo '<br/><b>' . Mage::helper('M2ePro')->__('Attention!') . '</b> ' . Mage::helper('M2ePro')->__('There\'s no rate for Order Currency in Magento. Please, add Currency convert rate in System > Manage Currency > Rates.');
                                         }
                                     ?>
                                 <?php else: ?>
@@ -316,7 +330,7 @@
                                     <?php if (!$this->order->getData('shipping_price')) { ?>
                                         <?php echo Mage::helper('M2ePro')->__('N/A'); ?>
                                     <?php } else { ?>
-                                        <?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getCurrency(), $this->order->getData('shipping_price')); ?>
+                                        <?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getData('shipping_price')); ?>
                                     <?php } ?>
                                 </strong>
                             </td>
@@ -327,6 +341,44 @@
                                 <td></td>
                                 <td class="value">
                                     <?php echo $this->getChildHtml('resubmit_shipping_info') ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+
+                        <?php if (!$this->order->getChildObject()->isMerchantFulfillmentApplied()):?>
+                            <?php if ($this->getChildHtml('use_amazons_shipping_services')):?>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <?php echo $this->getChildHtml('use_amazons_shipping_services'); ?>
+                                        <p class="note">
+                                            <span><?php echo Mage::helper('M2ePro')->__('
+                                                This Option allows you to specify Settings for
+                                                <strong>Amazon\'s Shipping Service Tool</strong> to get the List of available
+                                                Shipping Services offered by Amazon. In this case, Amazon guarantees
+                                                <strong>fast</strong> and <strong>high quality</strong> delivery.
+                                            '); ?></span>
+                                        </p>
+                                    </td>
+                                <tr>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td class="label"><?php echo Mage::helper('M2ePro')->__('Amazon\'s Shipping Services');?>:</td>
+                                <td class="value">
+                                    <strong>
+                                        <a href="javascript://" id="fulfillment_manage_title" onclick="OrderMerchantFulfillmentHandlerObj.getPopupAction(<?php echo $this->order->getId(); ?>);">
+                                            <?php echo Mage::helper('M2ePro')->__('Show Details');?>
+                                        </a>
+                                    </strong>
+                                    <p class="note">
+                                        <span><?php echo Mage::helper('M2ePro')->__('
+                                            This Option allows you to specify Settings for
+                                            <strong>Amazon\'s Shipping Service Tool</strong> to get the List of available
+                                            Shipping Services offered by Amazon. In this case, Amazon guarantees
+                                            <strong>fast</strong> and <strong>high quality</strong> delivery.
+                                        '); ?></span>
+                                    </p>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -388,22 +440,22 @@
 
                 <tr>
                     <td class="label"><?php echo Mage::helper('M2ePro')->__('Subtotal'); ?></td>
-                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getChildObject()->getSubtotalPrice());?></span></td>
+                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getChildObject()->getSubtotalPrice());?></span></td>
                 </tr>
 
                 <tr>
                     <td class="label"><?php echo Mage::helper('M2ePro')->__('Shipping &amp; Handling'); ?></td>
-                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getData('shipping_price')); ?></span></td>
+                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getData('shipping_price')); ?></span></td>
                 </tr>
 
                 <tr>
                     <td class="label"><?php echo Mage::helper('M2ePro')->__('Promotions'); ?></td>
-                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getChildObject()->getPromotionDiscountAmount() + $this->order->getChildObject()->getShippingDiscountAmount()); ?></span></td>
+                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getChildObject()->getPromotionDiscountAmount() + $this->order->getChildObject()->getShippingDiscountAmount()); ?></span></td>
                 </tr>
 
                 <tr>
                     <td class="label"><?php echo Mage::helper('M2ePro')->__('Tax'); ?></td>
-                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getChildObject()->getProductPriceTaxAmount()); ?></span></td>
+                    <td><span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getChildObject()->getProductPriceTaxAmount()); ?></span></td>
                 </tr>
 
             </tbody>
@@ -417,7 +469,7 @@
                     <td class="emph">
                         <big>
                             <strong>
-                                <span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getChildObject()->getGrandTotalPrice());?></span>
+                                <span class="price"><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getChildObject()->getGrandTotalPrice());?></span>
                             </strong>
                         </big>
                     </td>
@@ -425,7 +477,7 @@
 
                 <tr>
                     <td class="label"><small><?php echo Mage::helper('M2ePro')->__('Amount Paid'); ?></small></td>
-                    <td><span class="price"><small><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($this->order->getData('currency'), $this->order->getData('paid_amount'));?></small></span></td>
+                    <td><span class="price"><small><?php echo Mage::getSingleton('M2ePro/Currency')->formatPrice($currency, $this->order->getData('paid_amount'));?></small></span></td>
                 </tr>
 
             </tfoot>

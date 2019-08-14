@@ -1,11 +1,11 @@
 ConfigurationLicenseHandler = Class.create();
 ConfigurationLicenseHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function() {},
 
-    //----------------------------------
+    // ---------------------------------------
 
     changeLicenseKey: function()
     {
@@ -15,14 +15,14 @@ ConfigurationLicenseHandler.prototype = Object.extend(new CommonHandler(), {
         $('confirm_license_key_container').show();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     confirmLicenseKey: function()
     {
         configEditForm.submit(M2ePro.url.get('adminhtml_configuration_license/confirmKey'));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     completeStep: function()
     {
@@ -38,24 +38,11 @@ ConfigurationLicenseHandler.prototype = Object.extend(new CommonHandler(), {
                     window.opener.completeStep = 1;
                     window.close();
                 } else {
-                    MagentoMessageObj.addError(M2ePro.translator.translate('You must get valid Trial or Live license key.'));
+                    MagentoMessageObj.addError(M2ePro.translator.translate('You must get valid License Key.'));
                 }
             }
         });
-    },
-
-    //----------------------------------
-
-    componentSetTrial: function(button)
-    {
-        if (!confirm(M2ePro.translator.translate('Are you sure?'))) {
-            return;
-        }
-
-        var componentName = $(button).up().readAttribute('id');
-        componentName = componentName.substr(componentName.indexOf('_') + 1);
-        this.postForm(M2ePro.url.get('component_set_trial'), {component:componentName});
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

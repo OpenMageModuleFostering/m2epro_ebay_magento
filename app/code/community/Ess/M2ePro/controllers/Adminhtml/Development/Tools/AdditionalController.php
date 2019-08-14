@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Development_Tools_AdditionalController
     extends Ess_M2ePro_Controller_Adminhtml_Development_CommandController
 {
-    //#############################################
+    //########################################
 
     /**
      * @title "Memory Limit Test"
@@ -26,7 +28,7 @@ class Ess_M2ePro_Adminhtml_Development_Tools_AdditionalController
         $i = 0;
         $array = array();
 
-        while (1)  {
+        while (1) {
             ($array[] = $array) && ((++$i % 100) == 0) && Mage::log(memory_get_usage(true) / 1000000 ,null,$file,1);
         }
     }
@@ -81,21 +83,32 @@ HTML;
     }
 
     /**
-     * @title "Clear APC Opcode"
-     * @description "Clear APC Opcode"
-     * @confirm "Are you sure?"
+     * @title "Clear Opcode"
+     * @description "Clear Opcode (APC and Zend Optcache Extension)"
      */
-    public function clearApcOpcodeAction()
+    public function clearOpcodeAction()
     {
-        if (!Mage::helper('M2ePro/Client_Cache')->isApcAvailable()) {
-            $this->_getSession()->addError('APC not installed');
+        $messages = array();
+
+        if (!Mage::helper('M2ePro/Client_Cache')->isApcAvailable() &&
+            !Mage::helper('M2ePro/Client_Cache')->isZendOpcacheAvailable()) {
+
+            $this->_getSession()->addError('Opcode extensions are not installed.');
             $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageToolsTabUrl());
             return;
         }
 
-        apc_clear_cache('system');
+        if (Mage::helper('M2ePro/Client_Cache')->isApcAvailable()) {
+            $messages[] = 'APC opcode';
+            apc_clear_cache('system');
+        }
 
-        $this->_getSession()->addSuccess('APC opcode cache has been cleared');
+        if (Mage::helper('M2ePro/Client_Cache')->isZendOpcacheAvailable()) {
+            $messages[] = 'Zend Optcache';
+            opcache_reset();
+        }
+
+        $this->_getSession()->addSuccess(implode(' and ', $messages) . ' caches are cleared.');
         $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageToolsTabUrl());
     }
 
@@ -113,5 +126,5 @@ HTML;
         $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageToolsTabUrl());
     }
 
-    //#############################################
+    //########################################
 }

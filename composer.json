@@ -3,8 +3,7 @@
     "type": "magento-module",
     "license": "Terms-Of-Service",
     "homepage": "",
-    "description": "The <strong>M2E Pro<strong> extension fully integrates Magento into eBay, Amazon and Rakuten platforms. This allows quick and simple creation as well as management of product listings (inc. automated synchronization of stock levels, pricing, and product details), import of eBay and Amazon order, automated feedback posting for buyers and many other tasks which significantly reduce time required for listing maintenance.
-
+    "description": "The <strong>M2E Pro</strong> extension fully integrates Magento into eBay, Amazon and Rakuten platforms. This allows quick and simple creation as well as management of product listings (inc. automated synchronization of stock levels, pricing, and product details), import of eBay and Amazon order, automated feedback posting for buyers and many other tasks which significantly reduce time required for listing maintenance.
 The extension interacts with all 23 major eBay and 7 Amazon marketplaces. It supports multiple eBay/Amazon accounts and multiple Magento stores.",
     "authors": [
     {

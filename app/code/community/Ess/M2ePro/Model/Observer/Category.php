@@ -1,12 +1,14 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Observer_Category extends Ess_M2ePro_Model_Observer_Abstract
 {
-    //####################################
+    //########################################
 
     public function process()
     {
@@ -47,8 +49,8 @@ class Ess_M2ePro_Model_Observer_Category extends Ess_M2ePro_Model_Observer_Abstr
                 /** @var Mage_Catalog_Model_Product $product */
                 $product = Mage::helper('M2ePro/Magento_Product')->getCachedAndLoadedProduct($productId);
 
-                /** @var Ess_M2ePro_Model_Observer_Product_AddUpdate_AutoActions_Mode_Category $object */
-                $object = Mage::getModel('M2ePro/Observer_Product_AddUpdate_AutoActions_Mode_Category');
+                /** @var Ess_M2ePro_Model_Listing_Auto_Actions_Mode_Category $object */
+                $object = Mage::getModel('M2ePro/Listing_Auto_Actions_Mode_Category');
                 $object->setProduct($product);
 
                 if (in_array($productId,$postedProductsIds)) {
@@ -60,5 +62,5 @@ class Ess_M2ePro_Model_Observer_Category extends Ess_M2ePro_Model_Observer_Abstr
         }
     }
 
-    //####################################
+    //########################################
 }

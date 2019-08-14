@@ -1,14 +1,14 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
     extends Ess_M2ePro_Model_Connector_Amazon_Product_Requester
 {
-    // ########################################
-
     private $generalValidatorsObjects = array();
 
     private $skuGeneralValidatorsObjects = array();
@@ -21,7 +21,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
 
     private $validatorsData = array();
 
-    // ########################################
+    //########################################
 
     public function __construct(array $params = array(), array $listingsProducts)
     {
@@ -39,14 +39,17 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         }
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getCommand()
     {
         return array('product','add','entities');
     }
 
-    // ########################################
+    //########################################
 
     protected function getActionType()
     {
@@ -58,7 +61,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         return Ess_M2ePro_Model_Listing_Log::ACTION_LIST_PRODUCT_ON_COMPONENT;
     }
 
-    // ########################################
+    //########################################
 
     public function eventBeforeProcessing()
     {
@@ -73,7 +76,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         $this->addSkusToQueue($skus);
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product[] $listingProducts
@@ -94,7 +97,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         return $resultListingProducts;
     }
 
-    // ########################################
+    //########################################
 
     protected function validateAndFilterListingsProducts()
     {
@@ -105,7 +108,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         $this->processListTypeValidateAndFilter();
     }
 
-    // ########################################
+    //########################################
 
     private function processGeneralValidateAndFilter()
     {
@@ -113,10 +116,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
 
             $validator = $this->getGeneralValidatorObject($listingProduct);
 
-            if ($validator->isValid()) {
-                $this->addValidatorsData($listingProduct, $validator->getData());
-                continue;
-            }
+            $validationResult = $validator->validate();
 
             foreach ($validator->getMessages() as $message) {
                 $this->getLogger()->logListingProductMessage(
@@ -125,6 +125,11 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                     $message['type'],
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
+            }
+
+            if ($validationResult) {
+                $this->addValidatorsData($listingProduct, $validator->getData());
+                continue;
             }
 
             $this->removeAndUnlockListingProduct($listingProduct->getId());
@@ -137,10 +142,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
 
             $validator = $this->getSkuGeneralValidatorObject($listingProduct);
 
-            if ($validator->isValid()) {
-                $this->addValidatorsData($listingProduct, $validator->getData());
-                continue;
-            }
+            $validationResult = $validator->validate();
 
             foreach ($validator->getMessages() as $message) {
                 $this->getLogger()->logListingProductMessage(
@@ -149,6 +151,11 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                     $message['type'],
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
+            }
+
+            if ($validationResult) {
+                $this->addValidatorsData($listingProduct, $validator->getData());
+                continue;
             }
 
             $this->removeAndUnlockListingProduct($listingProduct->getId());
@@ -166,11 +173,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setRequestSkus($requestSkus);
             $validator->setQueueOfSkus($queueOfSkus);
 
-            if ($validator->isValid()) {
-                $requestSkus[] = $validator->getData('sku');
-                $this->addValidatorsData($listingProduct, $validator->getData());
-                continue;
-            }
+            $validationResult = $validator->validate();
 
             foreach ($validator->getMessages() as $message) {
                 $this->getLogger()->logListingProductMessage(
@@ -181,12 +184,19 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                 );
             }
 
+            if ($validationResult) {
+                $requestSkus[] = $validator->getData('sku');
+                $this->addValidatorsData($listingProduct, $validator->getData());
+                continue;
+            }
+
             $this->removeAndUnlockListingProduct($listingProduct->getId());
         }
     }
 
     private function processSkuExistenceValidateAndFilter()
     {
+        /** @var Ess_M2ePro_Model_Listing_Product[][] $listingProductsPacks */
         $listingProductsPacks = array_chunk($this->listingsProducts,20,true);
 
         foreach ($listingProductsPacks as $listingProductsPack) {
@@ -207,21 +217,28 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
 
                     /** @var $dispatcherObject Ess_M2ePro_Model_Connector_Amazon_Dispatcher */
                     $dispatcherObject = Mage::getModel('M2ePro/Connector_Amazon_Dispatcher');
-                    $response = $dispatcherObject->processVirtual(
-                        'product','search','asinBySkus',
-                        array('include_info' => true, 'only_realtime' => true, 'items' => $skus),'items',
-                        $this->account->getId()
-                    );
+                    $connectorObj = $dispatcherObject->getVirtualConnector('product','search','asinBySkus',
+                                                                           array('include_info' => true,
+                                                                                 'only_realtime' => true,
+                                                                                 'items' => $skus),
+                                                                           'items',
+                                                                           $this->account->getId());
+                    $response = $dispatcherObject->process($connectorObj);
+
+                    if (is_null($response) && $connectorObj->hasErrorMessages()) {
+                        throw new Ess_M2ePro_Model_Exception($connectorObj->getCombinedErrorMessage());
+                    }
 
                 } while (is_null($response) && ++$countTriedTemp <= 3);
 
                 if (is_null($response)) {
-                    throw new Exception('Requests are throttled many times.');
+                    throw new Ess_M2ePro_Model_Exception('Searching of SKU in your inventory on Amazon is not
+                        available now. Please repeat the action later.');
                 }
 
             } catch (Exception $exception) {
 
-                Mage::helper('M2ePro/Module_Exception')->process($exception,true);
+                Mage::helper('M2ePro/Module_Exception')->process($exception);
 
                 foreach ($listingProductsPack as $listingProduct) {
 
@@ -244,10 +261,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                 $validator = $this->getSkuExistenceValidatorObject($listingProduct);
                 $validator->setExistenceResult($existenceResult);
 
-                if ($validator->isValid()) {
-                    $this->addValidatorsData($listingProduct, $validator->getData());
-                    continue;
-                }
+                $validationResult = $validator->validate();
 
                 foreach ($validator->getMessages() as $message) {
                     $this->getLogger()->logListingProductMessage(
@@ -256,6 +270,11 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                         $message['type'],
                         Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                     );
+                }
+
+                if ($validationResult) {
+                    $this->addValidatorsData($listingProduct, $validator->getData());
+                    continue;
                 }
 
                 $this->removeAndUnlockListingProduct($listingProduct->getId());
@@ -270,15 +289,24 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         foreach ($this->listingsProducts as $listingProduct) {
 
             $validator = $this->getListTypeValidatorObject($listingProduct);
-            $validator->setChildGeneralIdsForParent($childGeneralIdsForParent);
 
-            if ($validator->isValid()) {
-                $this->addValidatorsData($listingProduct, $validator->getData());
-                $childGeneralIdsForParent = array_merge(
-                    $childGeneralIdsForParent, $validator->getChildGeneralIdsForParent()
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
+            $amazonListingProduct = $listingProduct->getChildObject();
+            $variationManager = $amazonListingProduct->getVariationManager();
+
+            if ($variationManager->isRelationChildType()) {
+                $variationParentId = $variationManager->getVariationParentId();
+
+                if (!isset($childGeneralIdsForParent[$variationParentId])) {
+                    $childGeneralIdsForParent[$variationParentId] = array();
+                }
+
+                $validator->setChildGeneralIdsForParent(
+                    $childGeneralIdsForParent[$variationParentId]
                 );
-                continue;
             }
+
+            $validationResult = $validator->validate();
 
             foreach ($validator->getMessages() as $message) {
                 $this->getLogger()->logListingProductMessage(
@@ -289,11 +317,24 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
                 );
             }
 
+            if ($validationResult) {
+                $this->addValidatorsData($listingProduct, $validator->getData());
+
+                if ($variationManager->isRelationChildType()) {
+                    $variationParentId = $variationManager->getVariationParentId();
+                    $childGeneralIdsForParent[$variationParentId][] = $this->getValidatorsData(
+                        $listingProduct, 'general_id'
+                    );
+                }
+
+                continue;
+            }
+
             $this->removeAndUnlockListingProduct($listingProduct->getId());
         }
     }
 
-    // ########################################
+    //########################################
 
     private function getValidatorsData(Ess_M2ePro_Model_Listing_Product $listingProduct, $key = null)
     {
@@ -322,7 +363,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         $this->validatorsData[$listingProductId] = array_merge($this->validatorsData[$listingProductId], $data);
     }
 
-    // ########################################
+    //########################################
 
     private function addSkusToQueue(array $skus)
     {
@@ -360,7 +401,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         return $lockItem->getContentData();
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product $listingProduct
@@ -378,7 +419,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
             $validator->setData($this->getValidatorsData($listingProduct));
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->generalValidatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -402,7 +443,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
             $validator->setData($this->getValidatorsData($listingProduct));
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->skuGeneralValidatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -426,7 +467,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
             $validator->setData($this->getValidatorsData($listingProduct));
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->skuSearchValidatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -450,7 +491,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
             $validator->setData($this->getValidatorsData($listingProduct));
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->skuExistenceValidatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -474,7 +515,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
             $validator->setData($this->getValidatorsData($listingProduct));
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->listTypeValidatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -482,7 +523,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         return $this->listTypeValidatorsObjects[$listingProduct->getId()];
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product $listingProduct
@@ -499,7 +540,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
 
             $request->setParams($this->params);
             $request->setListingProduct($listingProduct);
-            $request->setConfigurator($this->getConfigurator());
+            $request->setConfigurator($listingProduct->getActionConfigurator());
             $request->setValidatorsData($this->getValidatorsData($listingProduct));
 
             $this->requestsObjects[$listingProduct->getId()] = $request;
@@ -508,5 +549,5 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_List_MultipleRequester
         return $this->requestsObjects[$listingProduct->getId()];
     }
 
-    // ########################################
+    //########################################
 }

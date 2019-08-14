@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extends Mage_Adminhtml_Block_Widget_Grid
@@ -16,6 +18,8 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extend
     /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Matcher_Option $matcherOptions */
     private $matcherOptions;
 
+    //########################################
+
     public function __construct()
     {
         parent::__construct();
@@ -24,10 +28,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extend
         $this->listingProduct = Mage::getModel('M2ePro/Listing_Product')->load($this->productId);
 
         $this->matcherAttributes = Mage::getModel('M2ePro/Amazon_Listing_Product_Variation_Matcher_Attribute');
-        $this->matcherAttributes->setMarketplaceId(Mage::helper('M2ePro/Data_Global')->getValue('marketplace_id'));
-
         $this->matcherOptions = Mage::getModel('M2ePro/Amazon_Listing_Product_Variation_Matcher_Option');
-        $this->matcherOptions->setMarketplaceId(Mage::helper('M2ePro/Data_Global')->getValue('marketplace_id'));
 
         $this->currency = Mage::helper('M2ePro/Component_Amazon')
             ->getCachedObject('Marketplace', Mage::helper('M2ePro/Data_Global')->getValue('marketplace_id'))
@@ -35,19 +36,19 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extend
             ->getDefaultCurrency();
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('amazonProductSearchGrid');
-        //------------------------------
+        // ---------------------------------------
 
         // Set default values
-        //------------------------------
+        // ---------------------------------------
         $this->setFilterVisibility(false);
         $this->setPagerVisibility(false);
         $this->setDefaultSort('id');
         $this->setDefaultDir('ASC');
         $this->setSaveParametersInSession(true);
         $this->setUseAjax(true);
-        //------------------------------
+        // ---------------------------------------
     }
 
     protected function _prepareCollection()
@@ -67,7 +68,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extend
             );
 
             if ($temp['is_variation_product']) {
-                if(!$item['bad_parent']) {
+                if (!$item['bad_parent']) {
                     $temp += array(
                         'parentage' => $item['parentage'],
                         'variations' => $item['variations'],
@@ -149,7 +150,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_ProductSearch_Grid extend
 
     }
 
-    // ####################################
+    //########################################
 
     public function callbackColumnImage($value, $product, $column, $isExport)
     {
@@ -174,28 +175,44 @@ HTML;
 
     public function callbackColumnTitle($value, $row, $column, $isExport)
     {
-        $value = '<div style="margin-left: 3px; margin-bottom: 10px;">'.
+        $value = '<div style="margin-left: 3px; margin-bottom: 3px;">'.
                         Mage::helper('M2ePro')->escapeHtml($value)."</div>";
 
-        if(!$this->listingProduct->getChildObject()->getVariationManager()->isVariationProduct()
+        $id = $row->getId();
+        $generalId = $row->getData('general_id');
+        $categoryLinkTitle = Mage::helper('M2ePro')->escapeHtml('Show Categories');
+        $notFoundText = Mage::helper('M2ePro')->__('Categories Not Found');
+
+        $value .= <<<HTML
+<div style="margin-left: 3px; margin-bottom: 10px; font-size:10px; line-height: 1.1em">
+    <a href="javascript:void(0)"
+        onclick="ListingGridHandlerObj.productSearchHandler.showAsinCategories(
+            this, {$id}, '{$generalId}', {$this->productId})">
+        {$categoryLinkTitle}
+    </a>
+    <div id="asin_categories_{$id}"></div>
+    <div id="asin_categories_not_found_{$id}" style="display: none; font-style: italic">{$notFoundText}</div>
+</div>
+HTML;
+
+        if (!$this->listingProduct->getChildObject()->getVariationManager()->isVariationProduct()
             || $this->listingProduct->getChildObject()->getVariationManager()->isIndividualType()) {
-            if(!$row->getData('is_variation_product')) {
+            if (!$row->getData('is_variation_product')) {
                 return $value;
             }
         } else {
-            if(!$row->getData('is_variation_product')) {
+            if (!$row->getData('is_variation_product')) {
                 return $value;
             }
         }
 
-        if($row->getData('is_variation_product') && $row->getData('bad_parent')) {
+        if ($row->getData('is_variation_product') && $row->getData('bad_parent')) {
             return $value;
         }
 
-        $id = $row->getId();
         $variations = $row->getData('variations');
 
-        if($this->listingProduct->getChildObject()->getVariationManager()->isRelationParentType()) {
+        if ($this->listingProduct->getChildObject()->getVariationManager()->isRelationParentType()) {
 
             $magentoProductAttributesHtml = '';
             $magentoProductAttributesJs = '';
@@ -205,7 +222,7 @@ HTML;
             $this->matcherAttributes->setMagentoProduct($this->listingProduct->getMagentoProduct());
             $this->matcherAttributes->setDestinationAttributes($destinationAttributes);
 
-            if($this->matcherAttributes->isAmountEqual()) {
+            if ($this->matcherAttributes->isAmountEqual()) {
                 $magentoProductAttributesJs .= '<script type="text/javascript">';
                 $magentoProductAttributesHtml .= '<div><span style="margin-left: 10px;
                                         font-size: 11px;
@@ -224,7 +241,7 @@ HTML;
 
                 $matchedAttributes = $this->matcherAttributes->getMatchedAttributes();
                 $attributeId = 0;
-                foreach($matchedAttributes as $magentoAttr => $amazonAttr){
+                foreach ($matchedAttributes as $magentoAttr => $amazonAttr) {
 
                     $magentoProductAttributesHtml .= '<span style="margin-left: 10px;
                                             font-size: 11px;
@@ -233,11 +250,12 @@ HTML;
                                             width: 170px;">'.
                         ucfirst(strtolower($magentoAttr)).
                         '</span>';
-                    $magentoProductAttributesHtml .= '<input type="hidden" value="'.$magentoAttr.'"
+                    $magentoProductAttributesHtml .= '<input type="hidden" value="' .
+                                       Mage::helper('M2ePro')->escapeHtml($magentoAttr) . '"
                                        id="magento_product_attribute_'.$attributeId.'_'.$id.'">';
                     $magentoProductAttributesHtml .= '<select class="amazon_product_attribute_'.$id.'"
                                        onchange="ListingGridHandlerObj.productSearchHandler.attributesChange(this)"
-                                       style="width: 170px; margin-left: 5px; margin-right: 5px;
+                                       style="width: 170px; margin-left: 10px;
                                               margin-bottom: 7px; font-size: 10px;"
                                        id="amazon_product_attribute_'.$attributeId.'_'.$id.'">';
 
@@ -270,9 +288,72 @@ JS;
                     json_encode($variations).
                     '</div>';
             } else {
-                $value .= '<div style="font-size: 11px; font-weight: bold; color: grey; margin-left: 7px"><br/>';
-                $value .= implode(', ', $destinationAttributes);
-                $value .= '</div>';
+
+                $matchedAttributes = json_encode($this->matcherAttributes->getMatchedAttributes());
+                $destinationAttributes = json_encode($destinationAttributes);
+
+                foreach ($variations['set'] as $attribute => $options) {
+                    $variations['set'][$attribute] = array_values($options);
+                }
+
+                $amazonVariations = json_encode($variations);
+
+                $magentoAttributesText = Mage::helper('M2ePro')->__('Magento Attributes');
+                $amazonAttributesText = Mage::helper('M2ePro')->__('Amazon Attributes');
+
+                $searchHandler = 'ListingGridHandlerObj.productSearchHandler';
+
+                $value .= <<<HTML
+<form id="matching_attributes_form_{$id}" action="javascript:void(0)">
+        <div class="matching-attributes-table" style="display:table;padding-left:10px;font-size: 11px;color: #808080;">
+            <div class="matching-attributes-table-header"
+                style="display: table-row; font-weight: bold;">
+                <div style="display:table-cell; width: 170px; padding-right: 10px;">
+                    <span>{$magentoAttributesText}</span>
+                </div>
+                <div style="display:table-cell;">
+                    <span>{$amazonAttributesText}</span>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+HTML;
+
+                if ($this->matcherAttributes->isSourceAmountGreater()) {
+                    $magentoProductVariationsSet = $this->listingProduct->getMagentoProduct()
+                        ->getVariationInstance()->getVariationsTypeStandard();
+                    $magentoProductVariationsSet = json_encode($magentoProductVariationsSet['set']);
+                    $productAttributes = json_encode($this->listingProduct->getChildObject()
+                        ->getVariationManager()->getTypeModel()->getProductAttributes());
+
+                    $value .= <<<HTML
+<script type="application/javascript">
+    {$searchHandler}.searchData[{$id}] = {};
+    {$searchHandler}.searchData[{$id}].matchingType = {$searchHandler}.MATCHING_TYPE_VIRTUAL_AMAZON;
+    {$searchHandler}.searchData[{$id}].matchedAttributes = {$matchedAttributes};
+    {$searchHandler}.searchData[{$id}].productAttributes = {$productAttributes};
+    {$searchHandler}.searchData[{$id}].destinationAttributes = {$destinationAttributes};
+    {$searchHandler}.searchData[{$id}].magentoVariationSet = {$magentoProductVariationsSet};
+    {$searchHandler}.searchData[{$id}].amazonVariation = {$amazonVariations};
+
+    ListingGridHandlerObj.productSearchHandler.renderMatchedAttributesVirtualView({$id});
+</script>
+HTML;
+
+                } else {
+                    $value .= <<<HTML
+<script type="application/javascript">
+    {$searchHandler}.searchData[{$id}] = {};
+    {$searchHandler}.searchData[{$id}].matchingType = {$searchHandler}.MATCHING_TYPE_VIRTUAL_MAGENTO;
+    {$searchHandler}.searchData[{$id}].matchedAttributes = {$matchedAttributes};
+    {$searchHandler}.searchData[{$id}].destinationAttributes = {$destinationAttributes};
+    {$searchHandler}.searchData[{$id}].amazonVariation = {$amazonVariations};
+
+    ListingGridHandlerObj.productSearchHandler.renderMatchedAttributesVirtualView({$id});
+</script>
+HTML;
+                }
             }
 
             return $value . $magentoProductAttributesHtml . $magentoProductAttributesJs;
@@ -281,12 +362,12 @@ JS;
         $specificsHtml = '';
         $specificsJs = '<script type="text/javascript">';
 
-        //match options for individual
+        // match options for individual
         if ($this->listingProduct->getChildObject()->getVariationManager()->isIndividualType() &&
             $this->listingProduct->getChildObject()->getVariationManager()->getTypeModel()->isVariationProductMatched()
         ) {
             $channelVariations = array();
-            foreach($variations['asins'] as $asin => $asinAttributes) {
+            foreach ($variations['asins'] as $asin => $asinAttributes) {
                 $channelVariations[$asin] = $asinAttributes['specifics'];
             }
 
@@ -316,6 +397,8 @@ JS;
             $selectedOptions = $variations['asins'][$requestedChildAsin]['specifics'];
         }
 
+        $specificsHtml .= '<form action="javascript:void(0);">';
+
         $attributesNames = '<span style="margin-left: 10px;
                                 min-width: 100px;
                                 max-width: 170px;
@@ -327,21 +410,27 @@ JS;
             $attributesNames .= '<span style="margin-bottom: 5px; display: inline-block;">'.
                                     ucfirst(strtolower($specificName)).
                               '</span><br/>';
+            $attributeValues .= '<input type="hidden" value="' . Mage::helper('M2ePro')->escapeHtml($specificName) .
+                                '" class="specifics_name_'.$id.'">';
             $attributeValues .= '<select class="specifics_'.$id.'"
                                        onchange="ListingGridHandlerObj.productSearchHandler.specificsChange(this)"
                                        style="width: 170px; margin-bottom: 5px; font-size: 10px;"
                                        id="specific_'.$specificName.'_'.$id.'">';
             $attributeValues .= '<option class="empty" value=""></option>';
-            foreach ($specific as $option) {
 
-                $selected = '';
-                if ($requestedChildAsin && $selectedOptions[$specificName] == $option) {
-                    $selected = 'selected';
+            if (!empty($requestedChildAsin)) {
+                foreach ($specific as $option) {
+
+                    $selected = '';
+                    if ($selectedOptions[$specificName] == $option) {
+                        $selected = 'selected';
+                    }
+
+                    $option = Mage::helper('M2ePro')->escapeHtml($option);
+                    $attributeValues .= '<option value="'.$option.'" '.$selected.'>'.$option.'</option>';
                 }
-
-                $option = Mage::helper('M2ePro')->escapeHtml($option);
-                $attributeValues .= '<option value="'.$option.'" '.$selected.'>'.$option.'</option>';
             }
+
             $attributeValues .= '</select><br/>';
 
             $specificsJs .= <<<JS
@@ -351,15 +440,18 @@ JS;
 
         $specificsHtml .= $attributesNames . '</span>';
         $specificsHtml .= $attributeValues . '</span>';
+        $specificsHtml .= '</form>';
 
         $specificsJs .= '</script>';
 
-        $specificsJsonContainer = '<div id="parent_asin_'.$row->getId().'" style="display: none">'.
-                                  $row->getData('general_id').
-                                  '</div>'.
-                                  '<div id="asins_'.$id.'" style="display: none;">'.
-                                  json_encode($variations['asins']).
-                                  '</div>';
+        $variationAsins = json_encode($variations['asins']);
+        $variationTree = json_encode($this->getChannelVariationsTree($variations));
+
+        $specificsJsonContainer = <<<HTML
+<div id="parent_asin_{$id}" style="display: none">{$generalId}</div>
+<div id="asins_{$id}" style="display: none;">{$variationAsins}</div>
+<div id="channel_variations_tree_{$id}" style="display: none;">{$variationTree}</div>
+HTML;
 
         return $value . $specificsHtml . $specificsJsonContainer . $specificsJs;
     }
@@ -381,7 +473,7 @@ JS;
         $iconWarningPath = $this->getSkinUrl('M2ePro/images/warning.png');
         $iconHelpPath = $this->getSkinUrl('M2ePro/images/i_notice.gif');
 
-        if(!$this->listingProduct->getChildObject()->getVariationManager()->isVariationProduct()
+        if (!$this->listingProduct->getChildObject()->getVariationManager()->isVariationProduct()
             || $this->listingProduct->getChildObject()->getVariationManager()->isIndividualType()) {
             if (!$row->getData('is_variation_product')) {
 
@@ -391,7 +483,7 @@ JS;
 HTML;
             }
 
-            if(!$row->getData('bad_parent')) {
+            if (!$row->getData('bad_parent')) {
 
                 $msg = Mage::helper('M2ePro')->__(
                     'Please select necessary Options for this Amazon Product to be able to assign ASIN/ISBN.'
@@ -418,20 +510,29 @@ HTML;
             }
         }
 
-        if($row->getData('is_variation_product') && !$row->getData('bad_parent')) {
+        if ($row->getData('is_variation_product') && !$row->getData('bad_parent')) {
 
             $msg = Mage::helper('M2ePro')->__(
                 'Please map Amazon and Magento Attributes for this Amazon Product to be able to assign ASIN/ISBN.'
             );
 
             $variations = $row->getData('variations');
-            $this->matcherAttributes->setMagentoProduct($this->listingProduct->getMagentoProduct());
-            $this->matcherAttributes->setDestinationAttributes(array_keys($variations['set']));
+            $destinationAttributes = array_keys($variations['set']);
 
-            if(!$this->matcherAttributes->isAmountEqual()) {
+            $this->matcherAttributes->setMagentoProduct($this->listingProduct->getMagentoProduct());
+            $this->matcherAttributes->setDestinationAttributes($destinationAttributes);
+
+            if ($this->matcherAttributes->isSourceAmountGreater()) {
                 $msg = Mage::helper('M2ePro')->__(
-                    'This ASIN/ISBN cannot be assigned to selected Magento Product. <br/>
-                     The number of Magento Attributes is different from Amazon Attributes.'
+                    'Please map Magento and Amazon Attributes for this Amazon Product to be able to assign ASIN/ISBN.
+                    Be careful, as the number of  Magento Attributes is more than the number of Attributes in Amazon
+                    Parent Product. Thus you should select fixed Value for unmatched Magento Variational Attribute.'
+                );
+            } else if ($this->matcherAttributes->isDestinationAmountGreater()) {
+                $msg = Mage::helper('M2ePro')->__(
+                    'Please map Magento and Amazon Attributes for this Amazon Product to be able to assign ASIN/ISBN.
+                    Be careful, as the number of Attributes in Amazon Parent Product is more than the number of
+                    Magento Attributes. Thus you should select fixed Value for unmatched Amazon Variational Attribute.'
                 );
             }
 
@@ -484,35 +585,84 @@ HTML;
 HTML;
     }
 
-    // ####################################
+    //########################################
 
     protected function _toHtml()
     {
-        $javascriptsMain = <<<JAVASCRIPT
+        $magentoGreaterLeftSideText = Mage::helper('M2ePro')->__('This Amazon Attribute and its Value are virtualized '.
+        'based on the selected Magento Variational Attribute and its Value as physically this Amazon Attribute ' .
+        'does not exist.');
+        $magentoGreaterRightSideText = Mage::helper('M2ePro')->__('Select a particular Option of the Attribute to fix '.
+        'it for virtualized Amazon Attribute. Please, be thoughtful as only those Variations of Magento Product which '.
+        'contains the selected Option can be sold on Amazon.');
+
+        $amazonGreaterLeftSideText = Mage::helper('M2ePro')->__('This Magento Attribute and its Value are virtualized '.
+        'based on the selected Amazon Variational Attribute and its Value as physically this Magento Attribute ' .
+        'does not exist.');
+        $amazonGreaterRightSideText = Mage::helper('M2ePro')->__('Select a particular Option of the Attribute to fix ' .
+        'it for virtualized Magento Attribute. Please, be thoughtful as your offer will be available only for those ' .
+        'Buyers who selected the same Option.');
+
+        $duplicateMagentoAttributesError = Mage::helper('M2ePro')->__('The Magento Attributes which you selected in ' .
+        'your settings have the same Labels. Such combination is invalid. Please, add the valid combination ' .
+        'of Attributes.');
+        $duplicateAmazonAttributesError = Mage::helper('M2ePro')->__('The Amazon Attributes which you selected in ' .
+        'your settings have the same Labels. Such combination is invalid. Please, add the valid combination ' .
+        'of Attributes.');
+
+        $changeOption = Mage::helper('M2ePro')->__('Change option');
+
+        $jsText = <<<HTML
+<script type="text/javascript">
+    M2ePro.text.help_icon_magento_greater_left = '{$magentoGreaterLeftSideText}';
+    M2ePro.text.help_icon_magento_greater_right = '{$magentoGreaterRightSideText}';
+
+    M2ePro.text.help_icon_amazon_greater_left = '{$amazonGreaterLeftSideText}';
+    M2ePro.text.help_icon_amazon_greater_right = '{$amazonGreaterRightSideText}';
+
+    M2ePro.text.duplicate_magento_attribute_error = '{$duplicateMagentoAttributesError}';
+    M2ePro.text.duplicate_amazon_attribute_error = '{$duplicateAmazonAttributesError}';
+
+    M2ePro.text.change_option = '{$changeOption}';
+</script>
+HTML;
+
+        $javascriptsMain = <<<HTML
 <script type="text/javascript">
 
-    $$('#amazonProductSearchGrid div.grid th').each(function(el){
+    $$('#amazonProductSearchGrid div.grid th').each(function(el) {
         el.style.padding = '2px 2px';
     });
 
-    $$('#amazonProductSearchGrid div.grid td').each(function(el){
+    $$('#amazonProductSearchGrid div.grid td').each(function(el) {
         el.style.padding = '2px 2px';
     });
 
 </script>
-JAVASCRIPT;
+HTML;
+
+        $toolTipIcon = $this->getSkinUrl('M2ePro/images/tool-tip-icon.png');
+        $helpIcon = $this->getSkinUrl('M2ePro/images/help.png');
 
         $searchData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         $searchParamsHtml = <<<HTML
         <input id="amazon_asin_search_type" type="hidden" value="{$searchData['type']}">
         <input id="amazon_asin_search_value" type="hidden" value="{$searchData['value']}">
+
+        <div id="product_search_help_icon_tpl" style="display: none">
+            <img class="tool-tip-image" style="vertical-align: middle;" src="{$toolTipIcon}">
+            <span class="tool-tip-message tip-right" style="display: none;">
+                <img src="{$helpIcon}">
+                <span class="tool-tip-message-text"></span>
+            </span>
+        </div>
 HTML;
 
-        return parent::_toHtml() . $javascriptsMain . $searchParamsHtml;
+        return $jsText . parent::_toHtml() . $javascriptsMain . $searchParamsHtml;
     }
 
-    // ####################################
+    //########################################
 
     public function getGridUrl()
     {
@@ -524,5 +674,102 @@ HTML;
         return false;
     }
 
-    // ####################################
+    //########################################
+
+    private function getChannelVariationsTree($variations)
+    {
+        $channelVariations = array();
+        foreach ($variations['asins'] as $asin => $asinAttributes) {
+            $channelVariations[$asin] = $asinAttributes['specifics'];
+        }
+
+        if (empty($channelVariations)) {
+            return new stdClass();
+        }
+
+        $firstAttribute = key($variations['set']);
+
+        return $this->prepareVariations(
+            $firstAttribute, $channelVariations, $variations['set']
+        );
+    }
+
+    private function prepareVariations($currentAttribute, $variations, $variationsSets,$filters = array())
+    {
+        $return = false;
+
+        $temp = array_flip(array_keys($variationsSets));
+
+        $lastAttributePosition = count($variationsSets) - 1;
+        $currentAttributePosition = $temp[$currentAttribute];
+
+        if ($currentAttributePosition != $lastAttributePosition) {
+
+            $temp = array_keys($variationsSets);
+            $nextAttribute = $temp[$currentAttributePosition + 1];
+
+            foreach ($variationsSets[$currentAttribute] as $option) {
+
+                $filters[$currentAttribute] = $option;
+
+                $result = $this->prepareVariations(
+                    $nextAttribute,$variations,$variationsSets,$filters
+                );
+
+                if (!$result) {
+                    continue;
+                }
+
+                $return[$currentAttribute][$option] = $result;
+            }
+
+            ksort($return[$currentAttribute]);
+
+            return $return;
+        }
+
+        $return = false;
+        foreach ($variations as $key => $magentoVariation) {
+            foreach ($magentoVariation as $attribute => $option) {
+
+                if ($attribute == $currentAttribute) {
+
+                    if (count($variationsSets) != 1) {
+                        continue;
+                    }
+
+                    $values = array_flip($variationsSets[$currentAttribute]);
+                    $return = array($currentAttribute => $values);
+
+                    foreach ($return[$currentAttribute] as &$option) {
+                        $option = true;
+                    }
+
+                    return $return;
+                }
+
+                if ($option != $filters[$attribute]) {
+                    unset($variations[$key]);
+                    continue;
+                }
+
+                foreach ($magentoVariation as $tempAttribute => $tempOption) {
+                    if ($tempAttribute == $currentAttribute) {
+                        $option = $tempOption;
+                        $return[$currentAttribute][$option] = true;
+                    }
+                }
+            }
+        }
+
+        if (count($variations) < 1) {
+            return false;
+        }
+
+        ksort($return[$currentAttribute]);
+
+        return $return;
+    }
+
+    //########################################
 }

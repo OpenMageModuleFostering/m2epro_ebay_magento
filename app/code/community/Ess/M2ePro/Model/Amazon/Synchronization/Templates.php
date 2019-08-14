@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
@@ -22,7 +24,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
      */
     protected $changesHelper = NULL;
 
-    //####################################
+    //########################################
 
     protected function getType()
     {
@@ -39,7 +41,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
         return 'Inventory';
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
     protected function getPercentsStart()
     {
@@ -51,7 +53,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
         return 100;
     }
 
-    //####################################
+    //########################################
 
     protected function beforeStart()
     {
@@ -81,12 +83,13 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
         parent::afterEnd();
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
     protected function performActions()
     {
         $result = true;
 
+        $result = !$this->processTask('Templates_Repricing') ? false : $result;
         $result = !$this->processTask('Templates_List') ? false : $result;
         $result = !$this->processTask('Templates_Revise') ? false : $result;
         $result = !$this->processTask('Templates_Relist') ? false : $result;
@@ -106,7 +109,7 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
         return $task;
     }
 
-    //####################################
+    //########################################
 
     private function executeRunner()
     {
@@ -136,21 +139,17 @@ final class Ess_M2ePro_Model_Amazon_Synchronization_Templates
             return;
         }
 
+        // M2ePro_TRANSLATIONS
+        // Task "Inventory Synchronization" has completed with %result%. View Listings Log for details.
         $this->getLog()->addMessage(
             Mage::getModel('M2ePro/Log_Abstract')->encodeDescription(
-                'Task "Inventory Synchronization" has completed with %result%. View %sl%listings log%el% for details.',
-                array(
-                    '!sl'=>'<a target="_blank" href="route:*/adminhtml_common_log/listing/;'.
-                             'back:*/adminhtml_common_log/synchronization/;'.
-                             'channel:' . Ess_M2ePro_Helper_Component_Amazon::NICK . '">',
-                    '!el'=>'</a>',
-                    '!result'=>$resultString
-                )
+                'Task "Inventory Synchronization" has completed with %result%. View Listings Log for details.',
+                array('!result'=>$resultString)
             ), $resultType, $resultPriority
         );
 
         $this->getActualOperationHistory()->addText('Updating Products on Amazon ended with '.$resultString.'.');
     }
 
-    //####################################
+    //########################################
 }

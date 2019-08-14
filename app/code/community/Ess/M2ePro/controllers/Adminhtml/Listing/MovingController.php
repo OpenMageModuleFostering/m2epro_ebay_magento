@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 // move from listing to listing
@@ -9,7 +11,7 @@
 class Ess_M2ePro_Adminhtml_Listing_MovingController
     extends Ess_M2ePro_Controller_Adminhtml_BaseController
 {
-    //#############################################
+    //########################################
 
     public function moveToListingGridAction()
     {
@@ -36,7 +38,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         $this->getResponse()->setBody($block->toHtml());
     }
 
-    //#############################################
+    //########################################
 
     public function getFailedProductsGridAction()
     {
@@ -60,7 +62,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         $this->getResponse()->setBody($block->toHtml());
     }
 
-    //#############################################
+    //########################################
 
     public function prepareMoveToListingAction()
     {
@@ -71,12 +73,12 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
             ->getComponentModel($componentMode, 'Listing_Product')
             ->getCollection();
 
-        $listingProductCollection->addFieldToFilter('`main_table`.`id`', array('in' => $selectedProducts));
+        $listingProductCollection->addFieldToFilter('main_table.id', array('in' => $selectedProducts));
         $tempData = $listingProductCollection
             ->getSelect()
-            ->join( array('listing'=>Mage::getSingleton('core/resource')->getTableName('m2epro_listing')),
+            ->join(array('listing'=>Mage::getSingleton('core/resource')->getTableName('m2epro_listing')),
                     '`main_table`.`listing_id` = `listing`.`id`' )
-            ->join( array('cpe'=>Mage::getSingleton('core/resource')->getTableName('catalog_product_entity')),
+            ->join(array('cpe'=>Mage::getSingleton('core/resource')->getTableName('catalog_product_entity')),
                     '`main_table`.`product_id` = `cpe`.`entity_id`' )
             ->group(array('listing.account_id','listing.marketplace_id'))
             ->reset(Zend_Db_Select::COLUMNS)
@@ -90,7 +92,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         )));
     }
 
-    //#############################################
+    //########################################
 
     public function tryToMoveToListingAction()
     {
@@ -123,7 +125,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         )));
     }
 
-    //#############################################
+    //########################################
 
     public function moveToListingAction()
     {
@@ -165,8 +167,8 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
                     NULL,
                     Ess_M2ePro_Model_Listing_Log::ACTION_MOVE_TO_LISTING,
                     // M2ePro_TRANSLATIONS
-                    // Item was not moved because it is in progress state now
-                    'Item was not moved because it is in progress state now',
+                    // Item was not Moved because it is in progress state now
+                    'Item was not Moved because it is in progress state now',
                     Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR,
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
@@ -185,8 +187,8 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
                     NULL,
                     Ess_M2ePro_Model_Listing_Log::ACTION_MOVE_TO_LISTING,
                     // M2ePro_TRANSLATIONS
-                    // Item was not moved
-                    'Item was not moved',
+                    // Item was not Moved
+                    'Item was not Moved',
                     Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR,
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
@@ -203,8 +205,8 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
                 NULL,
                 Ess_M2ePro_Model_Listing_Log::ACTION_MOVE_TO_LISTING,
                 // M2ePro_TRANSLATIONS
-                // Item was successfully moved
-                'Item was successfully moved',
+                // Item was successfully Moved
+                'Item was successfully Moved',
                 Ess_M2ePro_Model_Log_Abstract::TYPE_NOTICE,
                 Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
             );
@@ -217,8 +219,8 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
                 NULL,
                 Ess_M2ePro_Model_Listing_Log::ACTION_MOVE_TO_LISTING,
                 // M2ePro_TRANSLATIONS
-                // Item was successfully moved
-                'Item was successfully moved',
+                // Item was successfully Moved
+                'Item was successfully Moved',
                 Ess_M2ePro_Model_Log_Abstract::TYPE_NOTICE,
                 Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
             );
@@ -262,7 +264,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         }
     }
 
-    //#############################################
+    //########################################
 
     private function productCanBeMoved($productId, $listing) {
 
@@ -271,7 +273,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         }
 
         // Add attribute set filter
-        //----------------------------
+        // ---------------------------------------
         $table = Mage::getSingleton('core/resource')->getTableName('catalog_product_entity');
         $dbSelect = Mage::getResourceModel('core/config')->getReadConnection()
             ->select()
@@ -289,7 +291,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         return true;
     }
 
-    //#############################################
+    //########################################
 
     private function moveChildrenToListing($parentListingProductId, $listing)
     {
@@ -300,7 +302,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         $connWrite = Mage::getSingleton('core/resource')->getConnection('core_write');
 
         // Get child products ids
-        //--------------------------
+        // ---------------------------------------
         $dbSelect = $connRead->select()
             ->from(
                 Mage::getResourceModel('M2ePro/Amazon_Listing_Product')->getMainTable(),
@@ -309,7 +311,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
             ->where('`variation_parent_id` = ?',$parentListingProductId);
         $products = $connRead->fetchPairs($dbSelect);
 
-        if(!empty($products)) {
+        if (!empty($products)) {
             $connWrite->update(
                 Mage::getResourceModel('M2ePro/Listing_Product')->getMainTable(),
                 array(
@@ -329,7 +331,7 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
             ->where('`sku` IN (?)', implode(',', array_values($products)));
         $items = $connRead->fetchCol($dbSelect);
 
-        if(!empty($items)) {
+        if (!empty($items)) {
             $connWrite->update(
                 Mage::getResourceModel('M2ePro/Amazon_Item')->getMainTable(),
                 array(
@@ -340,5 +342,5 @@ class Ess_M2ePro_Adminhtml_Listing_MovingController
         }
     }
 
-    //#############################################
+    //########################################
 }

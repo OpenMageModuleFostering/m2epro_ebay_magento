@@ -1,17 +1,17 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
-*/
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
+ */
 
 final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
     extends Ess_M2ePro_Model_Buy_Synchronization_Orders_Abstract
 {
-    // ##########################################################
-
     const LOCK_ITEM_PREFIX = 'synchronization_buy_orders_update';
 
-    // ##########################################################
+    //########################################
 
     protected function getNick()
     {
@@ -23,7 +23,7 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
         return 'Update';
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     protected function getPercentsStart()
     {
@@ -35,7 +35,7 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
         return 100;
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     protected function intervalIsEnabled()
     {
@@ -52,7 +52,7 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
         return parent::intervalIsLocked();
     }
 
-    // ##########################################################
+    //########################################
 
     protected function performActions()
     {
@@ -70,55 +70,53 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
 
             /** @var Ess_M2ePro_Model_Account $account */
 
-            // ----------------------------------------------------------
-            $this->getActualOperationHistory()->addText('Starting account "'.$account->getTitle().'"');
+            // ---------------------------------------
+            $this->getActualOperationHistory()->addText('Starting Account "'.$account->getTitle().'"');
             // M2ePro_TRANSLATIONS
-            // The "Update" action for Rakuten.com account: "%account_title%" is started. Please wait...
-            $status = 'The "Update" action for Rakuten.com account: "%account_title%" is started. Please wait...';
+            // The "Update" Action for Rakuten.com Account: "%account_title%" is started. Please wait...
+            $status = 'The "Update" Action for Rakuten.com Account: "%account_title%" is started. Please wait...';
             $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
-            // ----------------------------------------------------------
+            // ---------------------------------------
 
             if (!$this->isLockedAccount($account->getId())) {
 
-                // ----------------------------------------------------------
+                // ---------------------------------------
                 $this->getActualOperationHistory()->addTimePoint(
                     __METHOD__.'process'.$account->getId(),
-                    'Process account '.$account->getTitle()
+                    'Process Account '.$account->getTitle()
                 );
-                // ----------------------------------------------------------
+                // ---------------------------------------
 
                 $this->processAccount($account);
 
-                // ----------------------------------------------------------
+                // ---------------------------------------
                 $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'process'.$account->getId());
-                // ----------------------------------------------------------
+                // ---------------------------------------
             }
 
-            // ----------------------------------------------------------
+            // ---------------------------------------
             // M2ePro_TRANSLATIONS
-            // The "Update" action for Rakuten.com account: "%account_title%" is finished. Please wait...
-            $status = 'The "Update" action for Rakuten.com account: "%account_title%" is finished. Please wait...';
+            // The "Update" Action for Rakuten.com Account: "%account_title%" is finished. Please wait...
+            $status = 'The "Update" Action for Rakuten.com Account: "%account_title%" is finished. Please wait...';
             $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
             $this->getActualLockItem()->setPercents($this->getPercentsStart() + $iteration * $percentsForOneStep);
             $this->getActualLockItem()->activate();
-            // ----------------------------------------------------------
+            // ---------------------------------------
 
             $iteration++;
         }
     }
 
-    // ##########################################################
+    //########################################
 
     private function getPermittedAccounts()
     {
         /** @var $accountsCollection Mage_Core_Model_Mysql4_Collection_Abstract */
         $accountsCollection = Mage::helper('M2ePro/Component_Buy')->getCollection('Account');
-        $accountsCollection->addFieldToFilter('orders_mode', Ess_M2ePro_Model_Buy_Account::ORDERS_MODE_YES);
-
         return $accountsCollection->getItems();
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     private function isLockedAccount($accountId)
     {
@@ -164,12 +162,12 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
 
         /** @var $dispatcherObject Ess_M2ePro_Model_Connector_Buy_Dispatcher */
         $dispatcherObject = Mage::getModel('M2ePro/Connector_Buy_Dispatcher');
-        $dispatcherObject->processConnector(
-            'orders', 'update', 'shippingRequester', array('items' => $items), $account
-        );
+        $connectorObj = $dispatcherObject->getConnector('orders', 'update', 'shippingRequester',
+                                                        array('items' => $items), $account);
+        $dispatcherObject->process($connectorObj);
     }
 
-    // ##########################################################
+    //########################################
 
     private function getRelatedChanges(Ess_M2ePro_Model_Account $account)
     {
@@ -183,7 +181,7 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
         return $changesCollection->getItems();
     }
 
-    // ----------------------------------------------------------
+    // ---------------------------------------
 
     private function deleteNotActualChanges()
     {
@@ -194,5 +192,5 @@ final class Ess_M2ePro_Model_Buy_Synchronization_Orders_Update
             );
     }
 
-    // ##########################################################
+    //########################################
 }

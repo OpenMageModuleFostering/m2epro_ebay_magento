@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
@@ -9,45 +11,98 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
 {
     protected $generalBlockWasAppended = false;
 
-    //#############################################
+    protected $pageHelpLink = NULL;
+
+    protected $isUnAuthorized = false;
+
+    //########################################
 
     public function indexAction()
     {
         $this->_redirect(Mage::helper('M2ePro/Module_Support')->getPageRoute());
     }
 
-    //#############################################
+    protected function _isAllowed()
+    {
+        return Mage::getSingleton('admin/session')->isLoggedIn();
+    }
 
-    public function preDispatch()
+    //########################################
+
+    protected function setPageHelpLink($component = NULL, $article = NULL)
+    {
+        $this->pageHelpLink = Mage::helper('M2ePro/Module_Support')->getDocumentationUrl($component, $article);
+    }
+
+    protected function getPageHelpLink()
+    {
+        if (is_null($this->pageHelpLink)) {
+            return Mage::helper('M2ePro/Module_Support')->getDocumentationUrl();
+        }
+
+        return $this->pageHelpLink;
+    }
+
+    //########################################
+
+    final public function preDispatch()
     {
         parent::preDispatch();
 
-        // client was logged out
-        if ($this->getRequest()->isXmlHttpRequest() &&
-            !Mage::getSingleton('admin/session')->isLoggedIn()) {
+        /**
+         * Custom implementation of APPSEC-1034 (SUPEE-6788) [see additional information below].
+         * M2E Pro prevents redirect to Magento Admin Panel login page.
+         *
+         * This PHP class is the base PHP class of all M2E Pro controllers.
+         * Thus, it protects any action of any controller of M2E Pro extension.
+         *
+         * The code below is the logical extension of the method \Ess_M2ePro_Controller_Router::addModule.
+         */
+        // -----------------------------------------------------------------
+        if (!Mage::getSingleton('admin/session')->isLoggedIn()) {
 
-            exit(json_encode( array(
-                'ajaxExpired' => 1,
-                'ajaxRedirect' => $this->_getRefererUrl()
-            )));
+            $this->isUnAuthorized = true;
+
+            $this->setFlag('', self::FLAG_NO_DISPATCH, true);
+            $this->setFlag('', self::FLAG_NO_POST_DISPATCH, true);
+            $this->setFlag('', self::FLAG_NO_PRE_DISPATCH, true);
+
+            if ($this->getRequest()->isXmlHttpRequest()) {
+                exit(json_encode(array(
+                    'ajaxExpired'  => 1,
+                    'ajaxRedirect' => Mage::getBaseUrl()
+                )));
+            }
+
+            if (Mage::helper('M2ePro/Module')->isProductionEnvironment()) {
+                return $this->getResponse()->setRedirect(Mage::getBaseUrl());
+            }
         }
+        // -----------------------------------------------------------------
 
-        // flag controller loaded
+        Mage::helper('M2ePro/Module_Exception')->setFatalErrorHandler();
+
+        // flag that controller is loaded
         if (is_null(Mage::helper('M2ePro/Data_Global')->getValue('is_base_controller_loaded'))) {
             Mage::helper('M2ePro/Data_Global')->setValue('is_base_controller_loaded',true);
         }
 
+        $this->__preDispatch();
+
         return $this;
     }
 
-    public function dispatch($action)
+    final public function dispatch($action)
     {
         try {
 
-            Mage::helper('M2ePro/Module_Exception')->setFatalErrorHandler();
             parent::dispatch($action);
 
         } catch (Exception $exception) {
+
+            if ($this->isUnAuthorized) {
+                throw $exception;
+            }
 
             if ($this->getRequest()->getControllerName() ==
                 Mage::helper('M2ePro/Module_Support')->getPageControllerName()) {
@@ -84,7 +139,28 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         }
     }
 
-    //#############################################
+    final public function postDispatch()
+    {
+        parent::postDispatch();
+
+        if ($this->isUnAuthorized) {
+            return;
+        }
+
+        $this->__postDispatch();
+    }
+
+    //########################################
+
+    protected function __preDispatch() {}
+
+    protected function __postDispatch()
+    {
+        // Removes garbage from the response's body
+        ob_get_clean();
+    }
+
+    //########################################
 
     public function loadLayout($ids=null, $generateBlocks=true, $generateXml=true)
     {
@@ -93,7 +169,7 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         return parent::loadLayout($ids, $generateBlocks, $generateXml);
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     protected function _addLeft(Mage_Core_Block_Abstract $block)
     {
@@ -109,13 +185,13 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         return $this->addContent($block);
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     protected function beforeAddLeftEvent() {}
 
     protected function beforeAddContentEvent() {}
 
-    //#############################################
+    //########################################
 
     public function getSession()
     {
@@ -147,7 +223,7 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         return array_filter($requestIds);
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     protected function _initPopUp()
     {
@@ -183,7 +259,7 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         return $this;
     }
 
-    //#############################################
+    //########################################
 
     protected function appendGeneralBlock(Mage_Core_Block_Abstract $block)
     {
@@ -193,6 +269,7 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
 
         $generalBlockPath = Ess_M2ePro_Helper_View::GENERAL_BLOCK_PATH;
         $blockGeneral = $this->getLayout()->createBlock($generalBlockPath);
+        $blockGeneral->setData('page_help_link', $this->getPageHelpLink());
 
         $block->append($blockGeneral);
         $this->generalBlockWasAppended = true;
@@ -208,5 +285,5 @@ abstract class Ess_M2ePro_Controller_Adminhtml_BaseController
         return parent::_addContent($block);
     }
 
-    //#############################################
+    //########################################
 }

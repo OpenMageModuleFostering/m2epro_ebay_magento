@@ -1,13 +1,14 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_Tabs_Settings
-    extends Mage_Adminhtml_Block_Widget_Container
+    extends Ess_M2ePro_Block_Adminhtml_Widget_Container
 {
-
     const MESSAGE_TYPE_ERROR = 'error';
     const MESSAGE_TYPE_WARNING = 'warning';
 
@@ -16,12 +17,21 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
     protected $channelThemes = null;
     protected $childListingProducts = null;
     protected $currentProductVariations = null;
-    protected $productVariationsTree = array();
-    protected $channelVariationsTree = array();
 
-    //------------------------------
+    // ---------------------------------------
 
     protected $listingProductId;
+
+    //########################################
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->setTemplate('M2ePro/common/amazon/listing/variation/product/manage/tabs/settings.phtml');
+    }
+
+    //########################################
 
     /**
      * @param mixed $listingProductId
@@ -41,7 +51,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
         return $this->listingProductId;
     }
 
-    //------------------------------
+    // ---------------------------------------
 
     protected $messages = array();
     /**
@@ -73,7 +83,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
     {
         $type = self::MESSAGE_TYPE_WARNING;
         foreach ($this->messages as $message) {
-            if($message['type'] === self::MESSAGE_TYPE_ERROR)     {
+            if ($message['type'] === self::MESSAGE_TYPE_ERROR)     {
                 $type = $message['type'];
                 break;
             }
@@ -82,7 +92,8 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
         return $type;
     }
 
-    //------------------------------
+    // ---------------------------------------
+
     /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
     protected $listingProduct;
 
@@ -91,7 +102,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
      */
     public function getListingProduct()
     {
-        if(empty($this->listingProduct)) {
+        if (is_null($this->listingProduct)) {
             $this->listingProduct = Mage::helper('M2ePro/Component_Amazon')
                 ->getObject('Listing_Product', $this->getListingProductId());
         }
@@ -99,7 +110,27 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
         return $this->listingProduct;
     }
 
-    //------------------------------
+    // ---------------------------------------
+
+    /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
+    protected $listingProductTypeModel;
+
+    /**
+     * @return Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent|null
+     */
+    public function getListingProductTypeModel()
+    {
+        if (is_null($this->listingProductTypeModel)) {
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
+            $amazonListingProduct = $this->getListingProduct()->getChildObject();
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent $typeModel */
+            $this->listingProductTypeModel = $amazonListingProduct->getVariationManager()->getTypeModel();
+        }
+
+        return $this->listingProductTypeModel;
+    }
+
+    // ---------------------------------------
 
     /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Matcher_Attribute $matcherAttribute */
     protected $matcherAttributes;
@@ -109,9 +140,8 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
      */
     public function getMatcherAttributes()
     {
-        if(empty($this->matcherAttributes)) {
+        if (empty($this->matcherAttributes)) {
             $this->matcherAttributes = Mage::getModel('M2ePro/Amazon_Listing_Product_Variation_Matcher_Attribute');
-            $this->matcherAttributes->setMarketplaceId($this->getListingProduct()->getListing()->getMarketplaceId());
             $this->matcherAttributes->setMagentoProduct($this->getListingProduct()->getMagentoProduct());
             $this->matcherAttributes->setDestinationAttributes($this->getDestinationAttributes());
         }
@@ -119,14 +149,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_Variation_Product_Manage_
         return $this->matcherAttributes;
     }
 
-    public function __construct()
-    {
-        parent::__construct();
-
-        $this->setTemplate('M2ePro/common/amazon/listing/variation/product/manage/tabs/settings.phtml');
-    }
-
-    //------------------------------
+    // ---------------------------------------
 
     public function getWarnings()
     {
@@ -145,12 +168,12 @@ HTML;
 
     public function calculateWarnings()
     {
-        if(!$this->warningsCalculated) {
+        if (!$this->warningsCalculated) {
 
             $this->warningsCalculated = true;
 
             if (!$this->hasGeneralId() && $this->isGeneralIdOwner()) {
-                if(!$this->hasChannelTheme() || !$this->hasMatchedAttributes()) {
+                if (!$this->hasChannelTheme() || !$this->hasMatchedAttributes()) {
                     $this->addMessage(
                         Mage::helper('M2ePro')
                             ->__('Creation of New Parent-Child Product is impossible because Variation Theme
@@ -181,11 +204,10 @@ HTML;
                     );
                 }
             }
-
         }
     }
 
-    //------------------------------
+    // ---------------------------------------
 
     protected function _beforeToHtml()
     {
@@ -194,23 +216,35 @@ HTML;
         return parent::_beforeToHtml();
     }
 
-    // ###########################################
+    protected function _toHtml()
+    {
+        $vocabularyAttributesBlock = $this->getLayout()->createBlock(
+            'M2ePro/adminhtml_common_amazon_listing_variation_product_vocabularyAttributesPopup'
+        );
+
+        $vocabularyOptionsBlock = $this->getLayout()->createBlock(
+            'M2ePro/adminhtml_common_amazon_listing_variation_product_vocabularyOptionsPopup'
+        );
+
+        return $vocabularyAttributesBlock->toHtml() . $vocabularyOptionsBlock->toHtml() . parent::_toHtml();
+    }
+
+    //########################################
 
     public function isInAction()
     {
-        $lockedObjects = $this->getListingProduct()->getObjectLocks('in_action');
+        $lockedObjects = $this->getListingProduct()->getObjectLocks();
         return !empty($lockedObjects);
     }
 
-    // -------------------------------------------
+    // ---------------------------------------
 
     public function getProductAttributes()
     {
-        return $this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->getProductAttributes();
+        return $this->getListingProductTypeModel()->getProductAttributes();
     }
 
-    // -------------------------------------------
+    // ---------------------------------------
 
     public function showGeneralIdActions()
     {
@@ -218,7 +252,7 @@ HTML;
                !$this->getListingProduct()->getMagentoProduct()->isSimpleTypeWithCustomOptions();
     }
 
-    // -------------------------------------------
+    // ---------------------------------------
 
     public function hasGeneralId()
     {
@@ -247,7 +281,7 @@ HTML;
         return $this->getListingProduct()->getChildObject()->isGeneralIdOwner();
     }
 
-    // -------------------------------------------
+    // ---------------------------------------
 
     public function getDescriptionTemplateLink()
     {
@@ -262,16 +296,16 @@ HTML;
 HTML;
     }
 
-    // -------------------------------------------
+    // ---------------------------------------
 
     public function hasChannelTheme()
     {
-        return $this->getListingProduct()->getChildObject()->getVariationManager()->getTypeModel()->hasChannelTheme();
+        return $this->getListingProductTypeModel()->hasChannelTheme();
     }
 
     public function getChannelTheme()
     {
-        return $this->getListingProduct()->getChildObject()->getVariationManager()->getTypeModel()->getChannelTheme();
+        return $this->getListingProductTypeModel()->getChannelTheme();
     }
 
     public function getChannelThemes()
@@ -288,10 +322,26 @@ HTML;
             return array();
         }
 
-        $detailsModel = Mage::getModel('M2ePro/Amazon_Marketplace_Details');
-        $detailsModel->setMarketplaceId($this->getListingProduct()->getListing()->getMarketplaceId());
+        $marketPlaceId = $this->getListingProduct()->getListing()->getMarketplaceId();
 
-        return $this->channelThemes = $detailsModel->getVariationThemes($descriptionTemplate->getProductDataNick());
+        $detailsModel = Mage::getModel('M2ePro/Amazon_Marketplace_Details');
+        $detailsModel->setMarketplaceId($marketPlaceId);
+
+        $channelThemes = $detailsModel->getVariationThemes($descriptionTemplate->getProductDataNick());
+
+        $variationHelper = Mage::helper('M2ePro/Component_Amazon_Variation');
+        $themesUsageData = $variationHelper->getThemesUsageData();
+        $usedThemes = array();
+
+        if (!empty($themesUsageData[$marketPlaceId])) {
+            foreach ($themesUsageData[$marketPlaceId] as $theme => $count) {
+                if (!empty($channelThemes[$theme])) {
+                    $usedThemes[$theme] = $channelThemes[$theme];
+                }
+            }
+        }
+
+        return $this->channelThemes = array_merge($usedThemes, $channelThemes);
     }
 
     public function getChannelThemeAttr()
@@ -299,7 +349,7 @@ HTML;
         $theme = $this->getChannelTheme();
         $themes = $this->getChannelThemes();
 
-        if(!empty($themes[$theme])) {
+        if (!empty($themes[$theme])) {
             return $themes[$theme]['attributes'];
         }
 
@@ -311,7 +361,7 @@ HTML;
         $theme = $this->getChannelTheme();
         $themes = $this->getChannelThemes();
 
-        if(!empty($themes[$theme])) {
+        if (!empty($themes[$theme])) {
             return $themes[$theme]['note'];
         }
 
@@ -322,40 +372,96 @@ HTML;
     {
         $themesAttributes = $this->getChannelThemeAttr();
 
-        if(!empty($themesAttributes)) {
+        if (!empty($themesAttributes)) {
             return implode(', ', $themesAttributes);
         }
 
         return Mage::helper('M2ePro')->__('Variation Theme not found.');
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     public function hasMatchedAttributes()
     {
-        return $this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->hasMatchedAttributes();
+        return $this->getListingProductTypeModel()->hasMatchedAttributes();
     }
 
     public function getMatchedAttributes()
     {
-        if($this->hasMatchedAttributes()) {
-            return $this->getListingProduct()->getChildObject()
-                ->getVariationManager()->getTypeModel()->getMatchedAttributes();
+        if ($this->hasMatchedAttributes()) {
+            return $this->getListingProductTypeModel()->getMatchedAttributes();
         }
         return $this->getMatcherAttributes()->getMatchedAttributes();
     }
 
     public function getDestinationAttributes()
     {
-        if(!$this->hasGeneralId() && $this->isGeneralIdOwner() && $this->hasChannelTheme()) {
+        if (!$this->hasGeneralId() && $this->isGeneralIdOwner() && $this->hasChannelTheme()) {
             return $this->getChannelThemeAttr();
         }
-        return array_keys($this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->getChannelAttributesSets());
+        return array_keys($this->getListingProductTypeModel()->getChannelAttributesSets());
     }
 
-    // ###########################################
+    // ---------------------------------------
+
+    public function getVirtualAttributes()
+    {
+        $typeModel = $this->getListingProductTypeModel();
+
+        if ($virtualProductAttributes = $typeModel->getVirtualProductAttributes()) {
+            return $virtualProductAttributes;
+        }
+
+        if ($virtualChannelAttributes = $typeModel->getVirtualChannelAttributes()) {
+            return $virtualChannelAttributes;
+        }
+
+        return array();
+    }
+
+    public function getVirtualProductAttributes()
+    {
+        $typeModel = $this->getListingProductTypeModel();
+
+        if ($virtualProductAttributes = $typeModel->getVirtualProductAttributes()) {
+            return $virtualProductAttributes;
+        }
+
+        return array();
+    }
+
+    public function getVirtualChannelAttributes()
+    {
+        $typeModel = $this->getListingProductTypeModel();
+
+        if ($virtualChannelAttributes = $typeModel->getVirtualChannelAttributes()) {
+            return $virtualChannelAttributes;
+        }
+
+        return array();
+    }
+
+    // ---------------------------------------
+
+    public function isChangeMatchedAttributesAllowed()
+    {
+        if ($this->isInAction() ) {
+            return false;
+        }
+        if ($this->hasMatchedAttributes()) {
+            $typeModel = $this->getListingProductTypeModel();
+
+            $realMatchedAttributes = $typeModel->getRealMatchedAttributes();
+
+            if (count($realMatchedAttributes) === 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    //########################################
 
     public function getChildListingProducts()
     {
@@ -363,8 +469,7 @@ HTML;
             return $this->childListingProducts;
         }
 
-        return $this->childListingProducts = $this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->getChildListingsProducts();
+        return $this->childListingProducts = $this->getListingProductTypeModel()->getChildListingsProducts();
     }
 
     public function getCurrentProductVariations()
@@ -393,23 +498,40 @@ HTML;
         return $this->currentProductVariations = $productVariations;
     }
 
-    public function getChannelVariations()
-    {
-        if (!is_null($this->childListingProducts)) {
-            return $this->childListingProducts;
-        }
-
-        return $this->childListingProducts = $this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->getChildListingsProducts();
-    }
-
     public function getCurrentChannelVariations()
     {
-        return $this->getListingProduct()->getChildObject()
-            ->getVariationManager()->getTypeModel()->getChannelVariations();
+        return $this->getListingProductTypeModel()->getChannelVariations();
     }
 
-    // ------------------------------------------
+    // ---------------------------------------
+
+    public function getAmazonVariationsSet()
+    {
+        $variations = $this->getCurrentChannelVariations();
+
+        if (is_null($variations)) {
+            return false;
+        }
+
+        $attributesOptions = array();
+
+        foreach ($variations as $variation) {
+            foreach ($variation as $attr => $option) {
+                if (!isset($attributesOptions[$attr])) {
+                    $attributesOptions[$attr] = array();
+                }
+                if (!in_array($option, $attributesOptions[$attr])) {
+                    $attributesOptions[$attr][] = $option;
+                }
+            }
+        }
+
+        ksort($attributesOptions);
+
+        return $attributesOptions;
+    }
+
+    // ---------------------------------------
 
     public function getUsedChannelVariations()
     {
@@ -451,7 +573,7 @@ HTML;
         return $usedOptions;
     }
 
-    // ------------------------------------------
+    // ---------------------------------------
 
     public function getUnusedProductVariations()
     {
@@ -499,140 +621,7 @@ HTML;
         return false;
     }
 
-    // ------------------------------------------
-
-    public function getAttributesOptionsFromVariations($variations)
-    {
-        $attributesOptions = array();
-
-        foreach ($variations as $variation) {
-            foreach ($variation as $attr => $option) {
-                if (!isset($attributesOptions[$attr])) {
-                    $attributesOptions[$attr] = array();
-                }
-                if (!in_array($option, $attributesOptions[$attr])) {
-                    $attributesOptions[$attr][] = $option;
-                }
-            }
-        }
-
-        ksort($attributesOptions);
-
-        return $attributesOptions;
-    }
-
-    // ------------------------------------------
-
-    public function getProductVariationsTree()
-    {
-        if (empty($this->productVariationsTree)) {
-
-            $unusedVariations = $this->getUnusedProductVariations();
-            $variationsSets = $this->getAttributesOptionsFromVariations($unusedVariations);
-            $firstAttribute = key($variationsSets);
-
-            $this->productVariationsTree = $this->prepareVariations(
-                $firstAttribute,$unusedVariations,$variationsSets
-            );
-        }
-
-        return $this->productVariationsTree;
-    }
-
-    public function getChannelVariationsTree()
-    {
-        if (empty($this->channelVariationsTree)) {
-
-            $unusedVariations = $this->getUnusedChannelVariations();
-            $variationsSets = $this->getAttributesOptionsFromVariations($unusedVariations);
-            $firstAttribute = key($variationsSets);
-
-            $this->channelVariationsTree = $this->prepareVariations(
-                $firstAttribute,$unusedVariations,$variationsSets
-            );
-        }
-
-        return $this->channelVariationsTree;
-    }
-
-    private function prepareVariations($currentAttribute,$magentoVariations,$variationsSets,$filters = array())
-    {
-        $return = false;
-
-        $temp = array_flip(array_keys($variationsSets));
-
-        $lastAttributePosition = count($variationsSets) - 1;
-        $currentAttributePosition = $temp[$currentAttribute];
-
-        if ($currentAttributePosition != $lastAttributePosition) {
-
-            $temp = array_keys($variationsSets);
-            $nextAttribute = $temp[$currentAttributePosition + 1];
-
-            foreach ($variationsSets[$currentAttribute] as $option) {
-
-                $filters[$currentAttribute] = $option;
-
-                $result = $this->prepareVariations(
-                    $nextAttribute,$magentoVariations,$variationsSets,$filters
-                );
-
-                if (!$result) {
-                    continue;
-                }
-
-                $return[$currentAttribute][$option] = $result;
-            }
-
-            ksort($return[$currentAttribute]);
-
-            return $return;
-        }
-
-        $return = false;
-        foreach ($magentoVariations as $key => $magentoVariation) {
-            foreach ($magentoVariation as $attribute => $option) {
-
-                if ($attribute == $currentAttribute) {
-
-                    if (count($variationsSets) != 1) {
-                        continue;
-                    }
-
-                    $values = array_flip($variationsSets[$currentAttribute]);
-                    $return = array($currentAttribute => $values);
-
-                    foreach ($return[$currentAttribute] as &$option) {
-                        $option = true;
-                    }
-
-                    return $return;
-                }
-
-                if ($option != $filters[$attribute]) {
-                    unset($magentoVariations[$key]);
-                    continue;
-                }
-
-                foreach ($magentoVariation as $tempAttribute => $tempOption) {
-                    if ($tempAttribute == $currentAttribute) {
-                        $option = $tempOption;
-                        $return[$currentAttribute][$option] = true;
-                    }
-                }
-            }
-        }
-
-        if (count($magentoVariations) < 1) {
-            return false;
-        }
-
-        ksort($return[$currentAttribute]);
-
-        return $return;
-    }
-
-    // ------------------------------------------
+    // ---------------------------------------
 
     public function hasUnusedProductVariation()
     {
@@ -644,7 +633,7 @@ HTML;
         return count($this->getUsedChannelVariations()) < count($this->getCurrentChannelVariations());
     }
 
-    // ------------------------------------------
+    // ---------------------------------------
 
     public function hasChildWithEmptyProductOptions()
     {
@@ -678,5 +667,5 @@ HTML;
         return false;
     }
 
-    // ###########################################
+    //########################################
 }

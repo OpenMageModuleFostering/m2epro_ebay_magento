@@ -1,12 +1,14 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstract
 {
-    // ########################################
+    //########################################
 
     const CONTROLLER_MODULE_MODULE          = 'adminhtml_development_module_module';
     const CONTROLLER_MODULE_SYNCHRONIZATION = 'adminhtml_development_module_synchronization';
@@ -21,7 +23,7 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
 
     const CONTROLLER_BUILD                  = 'adminhtml_development_build';
 
-    // ########################################
+    //########################################
 
     public function parseGeneralCommandsData($controller)
     {
@@ -31,7 +33,7 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
         $reflectionMethods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
         // Get actions methods
-        //----------------------------------
+        // ---------------------------------------
         $actions = array();
         foreach ($reflectionMethods as $reflectionMethod) {
 
@@ -53,10 +55,10 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
 
             $actions[] = $methodName;
         }
-        //----------------------------------
+        // ---------------------------------------
 
         // Print method actions
-        //----------------------------------
+        // ---------------------------------------
         $methods = array();
         foreach ($actions as $action) {
 
@@ -70,6 +72,14 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
                 continue;
             }
 
+            $methodInvisible = false;
+            preg_match('/@invisible/', $commentsString, $matches);
+            isset($matches[0]) && $methodInvisible = true;
+
+            $methodNonProduction = false;
+            preg_match('/@non-production/', $commentsString, $matches);
+            isset($matches[0]) && $methodNonProduction = true;
+
             $methodTitle = $action;
             preg_match('/@title[\s]*\"(.*)\"/', $commentsString, $matches);
             isset($matches[1]) && $methodTitle = $matches[1];
@@ -80,7 +90,7 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
 
             $methodContent = '';
             $fileContent = file($reflectionMethod->getFileName());
-            for($i = $reflectionMethod->getStartLine() + 2; $i < $reflectionMethod->getEndLine(); $i++) {
+            for ($i = $reflectionMethod->getStartLine() + 2; $i < $reflectionMethod->getEndLine(); $i++) {
                 $methodContent .= $fileContent[$i-1];
             }
 
@@ -110,12 +120,14 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
             isset($matches[0]) && $methodNewWindow = true;
 
             $methods[] = array(
-                'title'       => $methodTitle,
-                'description' => $methodDescription,
-                'url'         => Mage::helper('adminhtml')->getUrl('*/'.$controller.'/'.$action),
-                'content'     => $methodContent,
-                'new_line'    => $methodNewLine,
-                'confirm'     => $methodConfirm,
+                'invisible'      => $methodInvisible,
+                'non_production' => $methodNonProduction,
+                'title'          => $methodTitle,
+                'description'    => $methodDescription,
+                'url'            => Mage::helper('adminhtml')->getUrl('*/' . $controller . '/' . $action),
+                'content'        => $methodContent,
+                'new_line'       => $methodNewLine,
+                'confirm'        => $methodConfirm,
                 'prompt'      => array(
                     'text' => $methodPrompt,
                     'var'  => $methodPromptVar
@@ -124,12 +136,12 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
                 'new_window'  => $methodNewWindow
             );
         }
-        //----------------------------------
+        // ---------------------------------------
 
         return $methods;
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     public function parseDebugCommandsData($controller)
     {
@@ -139,7 +151,7 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
         $reflectionMethods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
         // Get actions methods
-        //----------------------------------
+        // ---------------------------------------
         $actions = array();
         foreach ($reflectionMethods as $reflectionMethod) {
 
@@ -160,10 +172,10 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
 
             $actions[] = $methodName;
         }
-        //----------------------------------
+        // ---------------------------------------
 
         // Print method actions
-        //----------------------------------
+        // ---------------------------------------
         $methods = array();
         foreach ($actions as $action) {
 
@@ -207,12 +219,12 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
                 'new_window' => $methodNewWindow
             );
         }
-        //----------------------------------
+        // ---------------------------------------
 
         return $methods;
     }
 
-    // ########################################
+    //########################################
 
     private function getMethodComments(ReflectionMethod $reflectionMethod)
     {
@@ -235,5 +247,5 @@ class Ess_M2ePro_Helper_View_Development_Command extends Mage_Core_Helper_Abstra
         return $commentsString;
     }
 
-    // ########################################
+    //########################################
 }

@@ -80,7 +80,7 @@
 
                 <tr id="pay_pal_email_address_container" style="display: none;">
                     <td class="label">
-                        <label for="pay_pal_email_address"><?php echo Mage::helper('M2ePro')->__('PayPal Email Address'); ?>:</label>
+                        <label for="pay_pal_email_address"><?php echo Mage::helper('M2ePro')->__('PayPal Email Address'); ?>: <span class="required">*</span></label>
                     </td>
                     <td class="value">
                         <input
@@ -109,7 +109,7 @@
                             <?php if ($formData['pay_pal_immediate_payment']): ?>checked="checked"<?php endif; ?>
                         />
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('This is only applicable to Items listed on PayPal-enabled sites in categories that support immediate payment, when a seller has a Premier or Business PayPal account.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('This is only applicable to Items Listed on PayPal-enabled Sites in Categories that support immediate payment, when a Seller has a Premier or Business PayPal Account.'); ?></span>
                         </p>
                     </td>
                 </tr>

@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2011 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Block_Adminhtml_Magento_Product_Grid_Abstract
@@ -12,24 +14,24 @@ abstract class Ess_M2ePro_Block_Adminhtml_Magento_Product_Grid_Abstract
 
     protected $showAdvancedFilterProductsOption = true;
 
-    // ####################################
+    //########################################
 
     public function __construct()
     {
         parent::__construct();
 
         // Set default values
-        //------------------------------
+        // ---------------------------------------
         $this->setDefaultSort('product_id');
         $this->setDefaultDir('DESC');
         $this->setSaveParametersInSession(true);
         $this->setUseAjax(true);
-        //------------------------------
+        // ---------------------------------------
 
         $this->isAjax = json_encode($this->getRequest()->isXmlHttpRequest());
     }
 
-    // ####################################
+    //########################################
 
     public function setCollection($collection)
     {
@@ -49,31 +51,31 @@ abstract class Ess_M2ePro_Block_Adminhtml_Magento_Product_Grid_Abstract
         parent::setCollection($collection);
     }
 
-    // ####################################
+    //########################################
 
     protected function _prepareMassaction()
     {
         // Set massaction identifiers
-        //--------------------------------
+        // ---------------------------------------
         $this->getMassactionBlock()->setFormFieldName('ids');
-        //--------------------------------
+        // ---------------------------------------
 
         // Set fake action
-        //--------------------------------
+        // ---------------------------------------
         if ($this->getMassactionBlock()->getCount() == 0) {
             $this->getMassactionBlock()->addItem('fake', array(
                 'label' => '&nbsp;&nbsp;&nbsp;&nbsp;',
                 'url'   => '#',
             ));
         }
-        //--------------------------------
+        // ---------------------------------------
 
         return parent::_prepareMassaction();
     }
 
     protected function _prepareMassactionColumn()
     {
-        if($this->hideMassactionColumn) {
+        if ($this->hideMassactionColumn) {
             return;
         }
         parent::_prepareMassactionColumn();
@@ -94,7 +96,7 @@ abstract class Ess_M2ePro_Block_Adminhtml_Magento_Product_Grid_Abstract
             ? '' :  parent::getMassactionBlockHtml());
     }
 
-    // ####################################
+    //########################################
 
     public function callbackColumnProductId($value, $row, $column, $isExport)
     {
@@ -181,14 +183,14 @@ HTML;
         return $value;
     }
 
-    // ####################################
+    //########################################
 
     public function getRowUrl($row)
     {
         return false;
     }
 
-    // ####################################
+    //########################################
 
     public function getAdvancedFilterButtonHtml()
     {
@@ -211,7 +213,7 @@ HTML;
     {
         $html = '';
 
-        if ($this->getFilterVisibility()){
+        if ($this->getFilterVisibility()) {
             $html .= $this->getResetFilterButtonHtml();
             if (!$this->isShowRuleBlock()) {
                 $html .= $this->getAdvancedFilterButtonHtml();
@@ -224,7 +226,7 @@ HTML;
 
     protected function _toHtml()
     {
-        //------------------------------
+        // ---------------------------------------
         $css = '';
 
         if ($this->hideMassactionDropDown) {
@@ -236,9 +238,9 @@ HTML;
 </style>
 HTML;
         }
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $isShowRuleBlock = json_encode($this->isShowRuleBlock());
 
         $commonJs = <<<HTML
@@ -256,19 +258,19 @@ HTML;
                     : Event.observe(window, 'load', init);
 </script>
 HTML;
-        //------------------------------
+        // ---------------------------------------
 
         if ($this->getRequest()->isXmlHttpRequest()) {
             return $commonJs . parent::_toHtml();
         }
 
-        //------------------------------
+        // ---------------------------------------
         $helper = Mage::helper('M2ePro');
 
         $selectItemsMessage = $helper->escapeJs(
-            $helper->__('Please select the Products you want to perform the action on.')
+            $helper->__('Please select the Products you want to perform the Action on.')
         );
-        $createEmptyListingMessage = $helper->escapeJs($helper->__('Are you sure you want to create empty listing?'));
+        $createEmptyListingMessage = $helper->escapeJs($helper->__('Are you sure you want to create empty Listing?'));
 
         $showAdvancedFilterButtonText = $helper->escapeJs($helper->__('Show Advanced Filter'));
         $hideAdvancedFilterButtonText = $helper->escapeJs($helper->__('Hide Advanced Filter'));
@@ -288,7 +290,7 @@ HTML;
     M2ePro.text.show_advanced_filter = '{$showAdvancedFilterButtonText}';
     M2ePro.text.hide_advanced_filter = '{$hideAdvancedFilterButtonText}';
 
-    ProductGridHandlerObj = new ProductGridHandler();
+    ProductGridHandlerObj = new ListingProductGridHandler();
     ProductGridHandlerObj.setGridId('{$this->getJsObjectName()}');
 
     var init = function () {
@@ -300,12 +302,12 @@ HTML;
                     : Event.observe(window, 'load', init);
 </script>
 HTML;
-        //------------------------------
+        // ---------------------------------------
 
         return $css . parent::_toHtml() . $js . $commonJs;
     }
 
-    // ####################################
+    //########################################
 
     protected function isShowRuleBlock()
     {
@@ -321,5 +323,5 @@ HTML;
         return !empty($ruleData) || ($this->showAdvancedFilterProductsOption && $showHideProductsOption);
     }
 
-    // ####################################
+    //########################################
 }

@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
     extends Ess_M2ePro_Controller_Adminhtml_Common_MainController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -18,22 +20,28 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
         $this->getLayout()->getBlock('head')
              ->addJs('M2ePro/Common/Amazon/Template/SellingFormatHandler.js');
 
+        $this->_initPopUp();
+
+        $this->setPageHelpLink(Ess_M2ePro_Helper_Component_Amazon::NICK, 'Selling+Format+Policy');
+
         return $this;
     }
 
     protected function _isAllowed()
     {
-        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/templates/selling_format');
+        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/configuration');
     }
 
-    //#############################################
+    //########################################
 
     public function indexAction()
     {
-        return $this->_redirect('*/adminhtml_common_template_sellingFormat/index');
+        return $this->_redirect('*/adminhtml_common_template/index', array(
+            'channel' => Ess_M2ePro_Helper_Component_Amazon::NICK
+        ));
     }
 
-    //#############################################
+    //########################################
 
     public function newAction()
     {
@@ -47,7 +55,9 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
 
         if (!$model->getId() && $id) {
             $this->_getSession()->addError(Mage::helper('M2ePro')->__('Policy does not exist'));
-            return $this->_redirect('*/*/index');
+            return $this->_redirect('*/adminhtml_common_template/index', array(
+                'channel' => Ess_M2ePro_Helper_Component_Amazon::NICK
+            ));
         }
 
         Mage::helper('M2ePro/Data_Global')->setValue('temp_data', $model);
@@ -59,7 +69,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
              ->renderLayout();
     }
 
-    //#############################################
+    //########################################
 
     public function saveAction()
     {
@@ -70,7 +80,7 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
         $id = $this->getRequest()->getParam('id');
 
         // Base prepare
-        //--------------------
+        // ---------------------------------------
         $data = array();
 
         $keys = array(
@@ -88,6 +98,9 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
             'price_coefficient',
             'price_custom_attribute',
 
+            'map_price_mode',
+            'map_price_custom_attribute',
+
             'sale_price_mode',
             'sale_price_coefficient',
             'sale_price_custom_attribute',
@@ -101,24 +114,15 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
             'sale_price_end_date_value',
 
             'sale_price_start_date_custom_attribute',
-            'sale_price_end_date_custom_attribute'
+            'sale_price_end_date_custom_attribute',
+
+            'price_vat_percent'
         );
 
         foreach ($keys as $key) {
             if (isset($post[$key])) {
                 $data[$key] = $post[$key];
             }
-        }
-
-        $tempConstant = Ess_M2ePro_Block_Adminhtml_Common_Amazon_Template_SellingFormat_Edit_Form
-                            ::QTY_MODE_PRODUCT_FIXED_VIRTUAL_ATTRIBUTE_VALUE;
-
-        // virtual attribute for QTY_FIXED replacement
-        if ($data['qty_mode'] == Ess_M2ePro_Model_Template_SellingFormat::QTY_MODE_ATTRIBUTE &&
-            $data['qty_custom_attribute'] == $tempConstant) {
-
-            $data['qty_mode'] = Ess_M2ePro_Model_Template_SellingFormat::QTY_MODE_PRODUCT_FIXED;
-            $data['qty_custom_attribute'] = '';
         }
 
         if ($data['sale_price_start_date_value'] === '') {
@@ -141,10 +145,10 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
         }
 
         $data['title'] = strip_tags($data['title']);
-        //--------------------
+        // ---------------------------------------
 
         // Add or update model
-        //--------------------
+        // ---------------------------------------
         $model = Mage::helper('M2ePro/Component_Amazon')->getModel('Template_SellingFormat')->load($id);
 
         $oldData = $model->getDataSnapshot();
@@ -156,8 +160,11 @@ class Ess_M2ePro_Adminhtml_Common_Amazon_Template_SellingFormatController
         $id = $model->getId();
 
         $this->_getSession()->addSuccess(Mage::helper('M2ePro')->__('Policy was successfully saved'));
-        $this->_redirectUrl(Mage::helper('M2ePro')->getBackUrl('list',array(),array('edit'=>array('id'=>$id))));
+        $this->_redirectUrl(Mage::helper('M2ePro')->getBackUrl('*/adminhtml_common_template/index', array(), array(
+            'edit' => array('id'=>$id),
+            'channel' => Ess_M2ePro_Helper_Component_Amazon::NICK
+        )));
     }
 
-    //#############################################
+    //########################################
 }

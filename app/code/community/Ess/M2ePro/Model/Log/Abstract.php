@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
@@ -17,7 +19,7 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
 
     protected $componentMode = NULL;
 
-    //####################################
+    //########################################
 
     public function setComponentMode($mode)
     {
@@ -31,7 +33,7 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
         return $this->componentMode;
     }
 
-    //####################################
+    //########################################
 
     public function getNextActionId()
     {
@@ -60,27 +62,41 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
         return $nextActionId;
     }
 
+    /**
+     * @return string
+     */
     public function getLastActionIdConfigKey()
     {
         return 'general';
     }
 
-    //-----------------------------------
+    // ---------------------------------------
 
-    public function encodeDescription($string, array $params = array())
+    /**
+     * @param string $string
+     * @param array $params
+     * @param array $links
+     * @return string
+     */
+    public function encodeDescription($string, array $params = array(), array $links = array())
     {
-        if (count($params) <= 0) {
+        if (count($params) <= 0 && count($links) <= 0) {
             return $string;
         }
 
-        $tempArray = array(
+        $descriptionData = array(
             'string' => $string,
-            'params' => $params
+            'params' => $params,
+            'links'  => $links
         );
 
-        return json_encode($tempArray);
+        return json_encode($descriptionData);
     }
 
+    /**
+     * @param string $string
+     * @return string
+     */
     public function decodeDescription($string)
     {
         if (!is_string($string) || $string == '') {
@@ -91,10 +107,25 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
             return Mage::helper('M2ePro')->__($string);
         }
 
-        $tempArray = json_decode($string,true);
-        $string = Mage::helper('M2ePro')->__($tempArray['string']);
+        $descriptionData = json_decode($string,true);
+        $string = Mage::helper('M2ePro')->__($descriptionData['string']);
 
-        foreach ($tempArray['params'] as $key=>$value) {
+        if (!empty($descriptionData['params'])) {
+            $string = $this->addPlaceholdersToMessage($string, $descriptionData['params']);
+        }
+
+        if (!empty($descriptionData['links'])) {
+            $string = $this->addLinksToMessage($string, $descriptionData['links']);
+        }
+
+        return $string;
+    }
+
+    // ---------------------------------------
+
+    protected function addPlaceholdersToMessage($string, $params)
+    {
+        foreach ($params as $key=>$value) {
 
             if (isset($value{0}) && $value{0} == '{') {
                 $tempValueArray = json_decode($value, true);
@@ -113,7 +144,54 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
         return $string;
     }
 
-    //####################################
+    protected function addLinksToMessage($string, $links)
+    {
+        $readMoreLinks = array();
+        $resultString = $string;
+
+        foreach ($links as $link) {
+            preg_match('/!\w*_start!/', $resultString, $foundedStartMatches);
+
+            if (count($foundedStartMatches) == 0) {
+                $readMoreLinks[] = $link;
+                continue;
+            } else {
+
+                $startPart = $foundedStartMatches[0];
+                $endPart = str_replace('start', 'end', $startPart);
+
+                $wasFoundEndMatches = strpos($resultString, $endPart);
+
+                if ($wasFoundEndMatches !== false) {
+
+                    $openLinkTag = '<a href="' . $link . '" target="_blank">';
+                    $closeLinkTag = '</a>';
+
+                    $resultString = str_replace($startPart, $openLinkTag, $resultString);
+                    $resultString = str_replace($endPart, $closeLinkTag, $resultString);
+
+                } else {
+                    $readMoreLinks[] = $link;
+                }
+            }
+        }
+
+        if (count($readMoreLinks) > 0) {
+
+            foreach ($readMoreLinks as &$link) {
+                $link = '<a href="' . $link . '" target="_blank">' . Mage::helper('M2ePro')->__('here') . '</a>';
+            }
+
+            $delimiter = Mage::helper('M2ePro')->__('or');
+            $readMoreString = Mage::helper('M2ePro')->__('Details').' '.implode(' '.$delimiter.' ', $readMoreLinks).'.';
+
+            $resultString .= ' ' . $readMoreString;
+        }
+
+        return $resultString;
+    }
+
+    //########################################
 
     protected function getActionTitleByClass($class, $type)
     {
@@ -153,21 +231,7 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
         return $actionsValues;
     }
 
-    //-----------------------------------
-
-    protected function makeAndGetCreator()
-    {
-         $debugBackTrace = debug_backtrace();
-
-         if (!isset($debugBackTrace[2])) {
-             return 'unknown';
-         }
-
-         $creator = $debugBackTrace[2]['class'].'::'.$debugBackTrace[2]['function'].'()';
-         //$creator .= ' ['.$debugBackTrace[2]['line'].']';
-
-         return $creator;
-    }
+    // ---------------------------------------
 
     protected function clearMessagesByTable($tableNameOrModelName, $columnName = NULL, $columnId = NULL)
     {
@@ -185,5 +249,5 @@ class Ess_M2ePro_Model_Log_Abstract extends Ess_M2ePro_Model_Abstract
         Mage::getSingleton('core/resource')->getConnection('core_write')->delete($logsTable,$where);
     }
 
-    //####################################
+    //########################################
 }

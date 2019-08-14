@@ -1,7 +1,7 @@
 CommonBuyAccountHandler = Class.create();
 CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function()
     {
@@ -11,7 +11,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
                                                 M2ePro.formData.id,
                                                 M2ePro.php.constant('Ess_M2ePro_Helper_Component_Buy::NICK'));
 
-        Validation.add('M2ePro-require-select-attribute', M2ePro.translator.translate('If Yes is chosen, you must select at least one attribute for Product mapping.'), function(value, el) {
+        Validation.add('M2ePro-require-select-attribute', M2ePro.translator.translate('If Yes is chosen, you must select at least one Attribute for Product Mapping.'), function(value, el) {
 
             if ($('other_listings_mapping_mode').value == M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_MODE_NO')) {
                 return true;
@@ -28,7 +28,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
             return isAttributeSelected;
         });
 
-        Validation.add('M2ePro-web-access', M2ePro.translator.translate('M2E Pro was not able to get access to the Rakuten.com account. Please, make sure, that you enter correct Rakuten.com Seller Tools login and password.'), function(value, el) {
+        Validation.add('M2ePro-web-access', M2ePro.translator.translate('M2E Pro was not able to get access to the Rakuten.com Account. Please, make sure, that you enter correct Rakuten.com Seller Tools login and password.'), function(value, el) {
 
             var checkResult = false;
             var login = $('web_login').value;
@@ -54,7 +54,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
             return checkResult;
         });
 
-        Validation.add('M2ePro-ftp-access', M2ePro.translator.translate('M2E Pro was not able to get access to the Rakuten.com account. Please, make sure, that you enter correct Rakuten.com FTP login and password.'), function(value, el) {
+        Validation.add('M2ePro-ftp-access', M2ePro.translator.translate('M2E Pro was not able to get access to the Rakuten.com Account. Please, make sure, that you enter correct Rakuten.com FTP login and password.'), function(value, el) {
 
             var checkResult = false;
             var login = $('ftp_login').value;
@@ -80,7 +80,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
             return checkResult;
         });
 
-        Validation.add('M2ePro-marketplace-disabled', M2ePro.translator.translate('You must enable marketplace first.'), function(value, el) {
+        Validation.add('M2ePro-marketplace-disabled', M2ePro.translator.translate('You must enable Marketplace first.'), function(value, el) {
             return false;
         });
 
@@ -117,7 +117,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     completeStep: function()
     {
@@ -125,17 +125,17 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         window.close();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     delete_click: function()
     {
-        if (!confirm(M2ePro.translator.translate('Be attentive! By deleting account you delete all information on it from M2E Pro server. This will cause inappropriate work of all accounts\' copies.'))) {
+        if (!confirm(M2ePro.translator.translate('Be attentive! By Deleting Account you delete all information on it from M2E Pro Server. This will cause inappropriate work of all Accounts\' copies.'))) {
             return;
         }
         setLocation(M2ePro.url.get('deleteAction'));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     update_password: function(mode)
     {
@@ -144,7 +144,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
          $(mode + '_password_required').show();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     other_listings_synchronization_change: function()
     {
@@ -171,17 +171,15 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
             $('other_listings_move_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MOVE_TO_LISTINGS_DISABLED');
             $('mapping_general_id_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_GENERAL_ID_MODE_NONE');
             $('mapping_sku_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_SKU_MODE_NONE');
-            $('mapping_title_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_TITLE_MODE_NONE');
         }
 
         $('mapping_general_id_mode').simulate('change');
         $('mapping_sku_mode').simulate('change');
-        $('mapping_title_mode').simulate('change');
 
         $('other_listings_move_mode').simulate('change');
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     mapping_general_id_mode_change: function()
     {
@@ -209,21 +207,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    mapping_title_mode_change: function()
-    {
-        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_TITLE_MODE_NONE')) {
-            $('mapping_title_priority_td').hide();
-        } else {
-            $('mapping_title_priority_td').show();
-
-            $('mapping_title_attribute').value = '';
-            if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::OTHER_LISTINGS_MAPPING_TITLE_MODE_CUSTOM_ATTRIBUTE')) {
-                BuyAccountHandlerObj.updateHiddenValue(this, $('mapping_title_attribute'));
-            }
-        }
-    },
-
-    //----------------------------------
+    // ---------------------------------------
 
     move_mode_change: function()
     {
@@ -234,26 +218,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    //----------------------------------
-
-    ordersModeChange: function()
-    {
-        var self = BuyAccountHandlerObj;
-
-        if ($('orders_mode').value == M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::ORDERS_MODE_YES')) {
-            $('magento_block_buy_accounts_magento_orders_listings').show();
-            $('magento_block_buy_accounts_magento_orders_listings_other').show();
-        } else {
-            $('magento_block_buy_accounts_magento_orders_listings').hide();
-            $('magento_block_buy_accounts_magento_orders_listings_other').hide();
-        }
-
-        $('magento_orders_listings_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::MAGENTO_ORDERS_LISTINGS_MODE_NO');
-        $('magento_orders_listings_other_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Buy_Account::MAGENTO_ORDERS_LISTINGS_OTHER_MODE_NO');
-
-        self.magentoOrdersListingsModeChange();
-        self.magentoOrdersListingsOtherModeChange();
-    },
+    // ---------------------------------------
 
     magentoOrdersListingsModeChange: function()
     {
@@ -424,7 +389,7 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     saveAndClose: function()
     {
@@ -445,5 +410,5 @@ CommonBuyAccountHandler.prototype = Object.extend(new CommonHandler(), {
         });
     }
 
-    //---------------------------------
+    // ---------------------------------------
 });

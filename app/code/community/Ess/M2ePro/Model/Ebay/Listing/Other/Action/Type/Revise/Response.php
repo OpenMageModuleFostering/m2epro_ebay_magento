@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Revise_Response
     extends Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Response
 {
-    // ########################################
+    //########################################
 
     public function processSuccess(array $response, array $responseParams = array())
     {
@@ -44,14 +46,17 @@ class Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Revise_Response
         $this->getListingOther()->addData($data)->save();
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return string
+     */
     public function getSuccessfulMessage()
     {
-        if ($this->getConfigurator()->isAll() || !$this->getConfigurator()->isOnly()) {
+        if ($this->getConfigurator()->isAllAllowed()) {
             // M2ePro_TRANSLATIONS
-            // Item was successfully revised
-            return 'Item was successfully revised';
+            // Item was successfully Revised
+            return 'Item was successfully Revised';
         }
 
         $sequenceString = '';
@@ -70,34 +75,34 @@ class Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Revise_Response
 
         if ($this->getRequestData()->hasTitle()) {
             // M2ePro_TRANSLATIONS
-            // title
-            $sequenceString .= 'title,';
+            // Title
+            $sequenceString .= 'Title,';
         }
 
         if ($this->getRequestData()->hasSubtitle()) {
             // M2ePro_TRANSLATIONS
-            // subtitle
-            $sequenceString .= 'subtitle,';
+            // Subtitle
+            $sequenceString .= 'Subtitle,';
         }
 
         if ($this->getRequestData()->hasDescription()) {
             // M2ePro_TRANSLATIONS
-            // description
-            $sequenceString .= 'description,';
+            // Description
+            $sequenceString .= 'Description,';
         }
 
         if (empty($sequenceString)) {
             // M2ePro_TRANSLATIONS
-            // Item was successfully revised
-            return 'Item was successfully revised';
+            // Item was Successfully Revised
+            return 'Item was successfully Revised';
         }
 
         // M2ePro_TRANSLATIONS
-        // was successfully revised
-        return ucfirst(trim($sequenceString,',')).' was successfully revised';
+        // was Successfully Revised
+        return ucfirst(trim($sequenceString,',')).' was successfully Revised';
     }
 
-    // ########################################
+    //########################################
 
     protected function appendOnlineQtyValues($data)
     {
@@ -109,5 +114,5 @@ class Ess_M2ePro_Model_Ebay_Listing_Other_Action_Type_Revise_Response
         return $data;
     }
 
-    // ########################################
+    //########################################
 }

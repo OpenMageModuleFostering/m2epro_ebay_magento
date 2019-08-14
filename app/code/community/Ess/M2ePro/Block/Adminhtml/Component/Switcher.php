@@ -1,18 +1,23 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Block_Adminhtml_Component_Switcher extends Ess_M2ePro_Block_Adminhtml_Switcher
 {
-    // ########################################
+    //########################################
 
     protected function getComponentLabel($label)
     {
         $label = trim($label);
 
-        if (is_null($this->getData('component_mode'))) {
+        if (is_null($this->getData('component_mode')) ||
+            ($this->getData('component_mode') != Ess_M2ePro_Helper_Component_Ebay::NICK &&
+             count(Mage::helper('M2ePro/View_Common_Component')->getActiveComponents()) == 1)) {
+
             return trim(preg_replace(array('/%component%/', '/\s{2,}/'), ' ', $label));
         }
 
@@ -30,7 +35,7 @@ abstract class Ess_M2ePro_Block_Adminhtml_Component_Switcher extends Ess_M2ePro_
         return str_replace('%component%', $component, $label);
     }
 
-    // ########################################
+    //########################################
 
     public function getParamName()
     {
@@ -66,5 +71,5 @@ abstract class Ess_M2ePro_Block_Adminhtml_Component_Switcher extends Ess_M2ePro_
         return 'switch' . ucfirst($this->getParamName());
     }
 
-    // ########################################
+    //########################################
 }

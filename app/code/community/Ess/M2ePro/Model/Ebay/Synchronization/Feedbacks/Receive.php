@@ -1,44 +1,61 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
     extends Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Abstract
 {
-    //####################################
+    //########################################
 
+    /**
+     * @return string
+     */
     protected function getNick()
     {
         return '/receive/';
     }
 
+    /**
+     * @return string
+     */
     protected function getTitle()
     {
         return 'Receive';
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return int
+     */
     protected function getPercentsStart()
     {
         return 0;
     }
 
+    /**
+     * @return int
+     */
     protected function getPercentsEnd()
     {
         return 50;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return bool
+     */
     protected function intervalIsEnabled()
     {
         return true;
     }
 
-    //####################################
+    //########################################
 
     protected function performActions()
     {
@@ -55,10 +72,10 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
 
             /** @var $account Ess_M2ePro_Model_Account **/
 
-            $this->getActualOperationHistory()->addText('Starting account "'.$account->getTitle().'"');
+            $this->getActualOperationHistory()->addText('Starting Account "'.$account->getTitle().'"');
             // M2ePro_TRANSLATIONS
-            // The "Receive" action for eBay account: "%account_title%" is started. Please wait...
-            $status = 'The "Receive" action for eBay account: "%account_title%" is started. Please wait...';
+            // The "Receive" Action for eBay Account: "%account_title%" is started. Please wait...
+            $status = 'The "Receive" Action for eBay Account: "%account_title%" is started. Please wait...';
             $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
 
             $this->getActualOperationHistory()->addTimePoint(
@@ -69,8 +86,8 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
             $this->getActualOperationHistory()->saveTimePoint(__METHOD__.'get'.$account->getId());
 
             // M2ePro_TRANSLATIONS
-            // The "Receive" action for eBay account: "%account_title%" is finished. Please wait...
-            $status = 'The "Receive" action for eBay account: "%account_title%" is finished. Please wait...';
+            // The "Receive" Action for eBay Account: "%account_title%" is finished. Please wait...
+            $status = 'The "Receive" Action for eBay Account: "%account_title%" is finished. Please wait...';
             $this->getActualLockItem()->setStatus(Mage::helper('M2ePro')->__($status, $account->getTitle()));
             $this->getActualLockItem()->setPercents($this->getPercentsStart() + $iteration * $percentsForOneStep);
             $this->getActualLockItem()->activate();
@@ -79,7 +96,7 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
         }
     }
 
-    //####################################
+    //########################################
 
     protected function getPermittedAccounts()
     {
@@ -89,7 +106,7 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
         return $collection->getItems();
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
     protected function processAccount(Ess_M2ePro_Model_Account $account)
     {
@@ -118,17 +135,21 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
         !is_null($maxBuyerDate) && $paramsConnector['buyer_max_date'] = $maxBuyerDate;
         $result = $this->receiveFromEbay($account,$paramsConnector);
 
-        $this->getActualOperationHistory()->appendText('Total received feedback from eBay: '.$result['total']);
-        $this->getActualOperationHistory()->appendText('Total only new feedback from eBay: '.$result['new']);
+        $this->getActualOperationHistory()->appendText('Total received Feedback from eBay: '.$result['total']);
+        $this->getActualOperationHistory()->appendText('Total only new Feedback from eBay: '.$result['new']);
         $this->getActualOperationHistory()->saveBufferString();
     }
 
     protected function receiveFromEbay(Ess_M2ePro_Model_Account $account, array $paramsConnector = array())
     {
-        $feedbacks = Mage::getModel('M2ePro/Connector_Ebay_Dispatcher')
-                                ->processVirtual('feedback','get','entity',
-                                                 $paramsConnector,'feedbacks',
-                                                 NULL,$account->getId(),NULL);
+        $dispatcherObj = Mage::getModel('M2ePro/Connector_Ebay_Dispatcher');
+        $connectorObj = $dispatcherObj->getVirtualConnector('feedback','get','entity',
+                                                            $paramsConnector,'feedbacks',
+                                                            NULL,$account->getId(),NULL);
+
+        $feedbacks = $dispatcherObj->process($connectorObj);
+        $this->processResponseMessages($connectorObj);
+
         is_null($feedbacks) && $feedbacks = array();
 
         $countNewFeedbacks = 0;
@@ -188,5 +209,24 @@ final class Ess_M2ePro_Model_Ebay_Synchronization_Feedbacks_Receive
         );
     }
 
-    //####################################
+    private function processResponseMessages(Ess_M2ePro_Model_Connector_Protocol $connectorObj)
+    {
+        foreach ($connectorObj->getErrorMessages() as $message) {
+
+            if (!$connectorObj->isMessageError($message) && !$connectorObj->isMessageWarning($message)) {
+                continue;
+            }
+
+            $logType = $connectorObj->isMessageError($message) ? Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR
+                                                               : Ess_M2ePro_Model_Log_Abstract::TYPE_WARNING;
+
+            $this->getLog()->addMessage(
+                Mage::helper('M2ePro')->__($message[Ess_M2ePro_Model_Connector_Protocol::MESSAGE_TEXT_KEY]),
+                $logType,
+                Ess_M2ePro_Model_Log_Abstract::PRIORITY_HIGH
+            );
+        }
+    }
+
+    //########################################
 }

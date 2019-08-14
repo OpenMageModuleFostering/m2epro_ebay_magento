@@ -1,38 +1,84 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Configurator
     extends Ess_M2ePro_Model_Ebay_Listing_Action_Configurator
 {
-    const TYPE_IMAGES      = 'images';
-    const TYPE_VARIATIONS  = 'variations';
+    const DATA_TYPE_IMAGES      = 'images';
+    const DATA_TYPE_VARIATIONS  = 'variations';
 
-    // ########################################
+    //########################################
 
-    public function isAllPermitted()
+    /**
+     * @return array
+     */
+    public function getAllDataTypes()
     {
-        return $this->isGeneral() && $this->isVariations() &&
-               $this->isQty() && $this->isPrice() &&
-               $this->isTitle() && $this->isSubtitle() &&
-               $this->isDescription() && $this->isImages();
+        return array_merge(
+            parent::getAllDataTypes(),
+            array(
+                self::DATA_TYPE_IMAGES,
+                self::DATA_TYPE_VARIATIONS,
+            )
+        );
     }
 
-    // ########################################
+    //########################################
 
-    public function isVariations()
+    /**
+     * @return bool
+     */
+    public function isImagesAllowed()
     {
-        return $this->isAllowed(self::TYPE_VARIATIONS);
+        return $this->isAllowed(self::DATA_TYPE_IMAGES);
     }
 
-    // ----------------------------------------
-
-    public function isImages()
+    /**
+     * @return $this
+     */
+    public function allowImages()
     {
-        return $this->isAllowed(self::TYPE_IMAGES);
+        return $this->allow(self::DATA_TYPE_IMAGES);
     }
 
-    // ########################################
+    /**
+     * @return $this
+     */
+    public function disallowImages()
+    {
+        return $this->disallow(self::DATA_TYPE_IMAGES);
+    }
+
+    // ---------------------------------------
+
+    /**
+     * @return bool
+     */
+    public function isVariationsAllowed()
+    {
+        return $this->isAllowed(self::DATA_TYPE_VARIATIONS);
+    }
+
+    /**
+     * @return $this
+     */
+    public function allowVariations()
+    {
+        return $this->allow(self::DATA_TYPE_VARIATIONS);
+    }
+
+    /**
+     * @return $this
+     */
+    public function disallowVariations()
+    {
+        return $this->disallow(self::DATA_TYPE_VARIATIONS);
+    }
+
+    //########################################
 }

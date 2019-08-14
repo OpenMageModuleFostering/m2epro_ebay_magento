@@ -1,20 +1,25 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
     extends Ess_M2ePro_Model_Connector_Amazon_Product_Requester
 {
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getCommand()
     {
         return array('product','delete','entities');
     }
 
-    // ########################################
+    //########################################
 
     protected function getActionType()
     {
@@ -39,10 +44,11 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
                Ess_M2ePro_Model_Listing_Log::ACTION_DELETE_PRODUCT_FROM_COMPONENT;
     }
 
-    // ########################################
+    //########################################
 
     protected function validateAndFilterListingsProducts()
     {
+        /** @var Ess_M2ePro_Model_Listing_Product[] $parentsForProcessing */
         $parentsForProcessing = array();
 
         foreach ($this->listingsProducts as $listingProduct) {
@@ -61,15 +67,16 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
 
             $validator = $this->getValidatorObject($listingProduct);
 
-            if ($validator->isValid()) {
-                continue;
-            }
+            $validationResult = $validator->validate();
 
-            $this->removeAndUnlockListingProduct($listingProductId);
+            if (!$validationResult && $listingProduct->isDeleted()) {
+                $this->removeAndUnlockListingProduct($listingProductId);
 
-            if ($listingProduct->isDeleted()) {
                 if (!is_null($parentListingProduct)) {
-                    $parentsForProcessing[$parentListingProduct->getId()] = $parentListingProduct;
+                    $parentListingProductId = $parentListingProduct->getId();
+                    $parentsForProcessing[$parentListingProductId] = $parentListingProduct->loadInstance(
+                        $parentListingProductId
+                    );
                 }
 
                 continue;
@@ -84,6 +91,12 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
             }
+
+            if ($validationResult) {
+                continue;
+            }
+
+            $this->removeAndUnlockListingProduct($listingProductId);
         }
 
         foreach ($parentsForProcessing as $parentListingProduct) {
@@ -93,7 +106,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
         }
     }
 
-    // ########################################
+    //########################################
 
     protected function validateAndProcessParentListingsProducts()
     {
@@ -187,7 +200,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
         }
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product[] $listingProducts
@@ -198,7 +211,7 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
         $resultListingProducts = array();
 
         foreach ($listingProducts as $id => $childListingProduct) {
-            if ($childListingProduct->isBlocked()) {
+            if ($childListingProduct->isBlocked() && empty($this->params['remove'])) {
                 continue;
             }
 
@@ -208,5 +221,39 @@ class Ess_M2ePro_Model_Connector_Amazon_Product_Delete_MultipleRequester
         return $resultListingProducts;
     }
 
-    // ########################################
+    protected function filterLockedListingsProducts()
+    {
+        parent::filterLockedListingsProducts();
+
+        if (empty($this->params['remove'])) {
+            return;
+        }
+
+        foreach ($this->listingsProducts as $key => $listingProduct) {
+
+            /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
+            $amazonListingProduct = $listingProduct->getChildObject();
+
+            if (!$amazonListingProduct->getVariationManager()->isRelationParentType()) {
+                continue;
+            }
+
+            if (!$listingProduct->isLockedObject('child_products_in_action')) {
+                continue;
+            }
+
+            // M2ePro_TRANSLATIONS
+            // Another Action is being processed. Try again when the Action is completed.
+            $this->getLogger()->logListingProductMessage(
+                $listingProduct,
+                'Delete and Remove action is not supported if Child Products are in Action.',
+                Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR,
+                Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
+            );
+
+            unset($this->listingsProducts[$key]);
+        }
+    }
+
+    //########################################
 }

@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
@@ -21,11 +23,6 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
      */
     protected $logger = NULL;
 
-    /**
-     * @var Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator
-     */
-    protected $configurator = NULL;
-
     // ---------------------------------------
 
     /**
@@ -43,55 +40,85 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
      */
     protected $requestsDataObjects = array();
 
-    // ########################################
+    //########################################
 
     /**
      * @param array $params
      * @param Ess_M2ePro_Model_Listing_Product[] $listingsProducts
-     * @throws Exception
+     * @throws Ess_M2ePro_Model_Exception
      */
     public function __construct(array $params = array(), array $listingsProducts)
     {
         if (!isset($params['logs_action_id']) || !isset($params['status_changer'])) {
-            throw new Exception('Product connector has not received some params');
+            throw new Ess_M2ePro_Model_Exception('Product Connector has not received some params');
         }
 
         if (empty($listingsProducts)) {
-            throw new Exception('Product connector has received empty array');
+            throw new Ess_M2ePro_Model_Exception('Product Connector has received empty array');
         }
 
         /** @var Ess_M2ePro_Model_Account $account */
         $account = reset($listingsProducts)->getListing()->getAccount();
 
-        foreach($listingsProducts as $listingProduct) {
+        $listingProductIds   = array();
+        $actionConfigurators = array();
 
-            $listingProduct->loadInstance($listingProduct->getId());
+        foreach ($listingsProducts as $listingProduct) {
 
             if (!($listingProduct instanceof Ess_M2ePro_Model_Listing_Product)) {
-                throw new Exception('Product connector has received invalid Product data type');
+                throw new Ess_M2ePro_Model_Exception('Product Connector has received invalid Product data type');
             }
 
             if ($account->getId() != $listingProduct->getListing()->getAccountId()) {
-                throw new Exception('Product connector has received Products from different accounts');
+                throw new Ess_M2ePro_Model_Exception('Product Connector has received Products from different Accounts');
             }
 
-            $this->listingsProducts[$listingProduct->getId()] = $listingProduct;
+            $listingProductIds[] = $listingProduct->getId();
+
+            if (!is_null($listingProduct->getActionConfigurator())) {
+                $actionConfigurators[$listingProduct->getId()] = $listingProduct->getActionConfigurator();
+            } else {
+                $actionConfigurators[$listingProduct->getId()] = Mage::getModel(
+                    'M2ePro/Amazon_Listing_Product_Action_Configurator'
+                );
+            }
+        }
+
+        /** @var Ess_M2ePro_Model_Mysql4_Listing_Product_Collection $listingProductCollection */
+        $listingProductCollection = Mage::helper('M2ePro/Component_Amazon')->getCollection('Listing_Product');
+        $listingProductCollection->addFieldToFilter('id', array('in' => array_unique($listingProductIds)));
+
+        /** @var Ess_M2ePro_Model_Listing_Product[] $actualListingsProducts */
+        $actualListingsProducts = $listingProductCollection->getItems();
+
+        if (empty($actualListingsProducts)) {
+            throw new Ess_M2ePro_Model_Exception('All products were removed before connector processing');
+        }
+
+        foreach ($actualListingsProducts as $actualListingProduct) {
+            $actualListingProduct->setActionConfigurator($actionConfigurators[$actualListingProduct->getId()]);
+            $this->listingsProducts[$actualListingProduct->getId()] = $actualListingProduct;
         }
 
         parent::__construct($params,$account);
     }
 
-    // ########################################
+    //########################################
 
     abstract protected function getLogsAction();
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function getLockIdentifier()
     {
         return strtolower($this->getOrmActionType());
     }
 
+    /**
+     * @param Ess_M2ePro_Model_Processing_Request $processingRequest
+     * @throws Ess_M2ePro_Model_Exception
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
     public function setProcessingLocks(Ess_M2ePro_Model_Processing_Request $processingRequest)
     {
         parent::setProcessingLocks($processingRequest);
@@ -133,7 +160,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         }
     }
 
-    // ########################################
+    //########################################
 
     public function process()
     {
@@ -142,9 +169,10 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
             $this->getLogger()->setStatus(Ess_M2ePro_Helper_Data::STATUS_SUCCESS);
             $this->setIsProcessingItems(false);
 
+            $this->filterLockedListingsProducts();
+
             $this->validateAndProcessParentListingsProducts();
 
-            $this->filterLockedListingsProducts();
             $this->lockListingsProducts();
 
             $this->validateAndFilterListingsProducts();
@@ -172,24 +200,11 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         $this->unlockListingsProducts();
     }
 
-    protected function processResponseInfo($responseInfo)
-    {
-        try {
-            parent::processResponseInfo($responseInfo);
-        } catch (Exception $exception) {
+    //########################################
 
-            foreach ($this->listingsProducts as $listingProduct) {
-                $this->getLogger()->logListingProductMessage($listingProduct, $exception->getMessage(),
-                                                             Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR,
-                                                             Ess_M2ePro_Model_Log_Abstract::PRIORITY_HIGH);
-            }
-
-            throw $exception;
-        }
-    }
-
-    // ########################################
-
+    /**
+     * @return bool
+     */
     public function isProcessingItems()
     {
         return (bool)$this->isProcessingItems;
@@ -200,14 +215,14 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         $this->isProcessingItems = (bool)$isProcessingItems;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     public function getStatus()
     {
         return $this->getLogger()->getStatus();
     }
 
-    // ########################################
+    //########################################
 
     protected function validateAndFilterListingsProducts()
     {
@@ -215,9 +230,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
 
             $validator = $this->getValidatorObject($listingProduct);
 
-            if ($validator->isValid()) {
-                continue;
-            }
+            $validationResult = $validator->validate();
 
             foreach ($validator->getMessages() as $message) {
 
@@ -229,11 +242,15 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
                 );
             }
 
+            if ($validationResult) {
+                continue;
+            }
+
             $this->removeAndUnlockListingProduct($listingProduct->getId());
         }
     }
 
-    // ########################################
+    //########################################
 
     protected function validateAndProcessParentListingsProducts()
     {
@@ -317,7 +334,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         return $resultListingProducts;
     }
 
-    // ########################################
+    //########################################
 
     protected function filterLockedListingsProducts()
     {
@@ -329,10 +346,10 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
             if ($listingProduct->isLockedObject('in_action') || $lockItem->isExist()) {
 
                 // M2ePro_TRANSLATIONS
-                // Another action is being processed. Try again when the action is completed.
+                // Another Action is being processed. Try again when the Action is completed.
                 $this->getLogger()->logListingProductMessage(
                     $listingProduct,
-                    'Another action is being processed. Try again when the action is completed.',
+                    'Another Action is being processed. Try again when the Action is completed.',
                     Ess_M2ePro_Model_Log_Abstract::TYPE_ERROR,
                     Ess_M2ePro_Model_Log_Abstract::PRIORITY_MEDIUM
                 );
@@ -351,7 +368,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         unset($this->listingsProducts[$listingProductId]);
     }
 
-    // ########################################
+    //########################################
 
     protected function lockListingsProducts()
     {
@@ -377,7 +394,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         }
     }
 
-    // ########################################
+    //########################################
 
     protected function getRequestData()
     {
@@ -414,22 +431,25 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         $products = array();
 
         foreach ($this->listingsProducts as $listingProduct) {
-            $products[$listingProduct->getId()] = $this->getRequestDataObject($listingProduct)->getData();
+            $products[$listingProduct->getId()] = array(
+                'request'      => $this->getRequestDataObject($listingProduct)->getData(),
+                'configurator' => $listingProduct->getActionConfigurator()->getData(),
+            );
         }
 
         return array(
-            'account_id' => $this->account->getId(),
-            'action_type' => $this->getActionType(),
+            'account_id'      => $this->account->getId(),
+            'action_type'     => $this->getActionType(),
             'lock_identifier' => $this->getLockIdentifier(),
-            'logs_action' => $this->getLogsAction(),
-            'logs_action_id' => $this->getLogger()->getActionId(),
-            'status_changer' => $this->params['status_changer'],
-            'params' => $this->params,
-            'products' => $products
+            'logs_action'     => $this->getLogsAction(),
+            'logs_action_id'  => $this->getLogger()->getActionId(),
+            'status_changer'  => $this->params['status_changer'],
+            'params'          => $this->params,
+            'products'        => $products,
         );
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Amazon_Listing_Product_Action_Logger
@@ -465,25 +485,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         return $this->logger;
     }
 
-    /**
-     * @return Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator
-     */
-    protected function getConfigurator()
-    {
-        if (is_null($this->configurator)) {
-
-            /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Action_Configurator $configurator */
-
-            $configurator = Mage::getModel('M2ePro/Amazon_Listing_Product_Action_Configurator');
-            $configurator->setParams($this->params);
-
-            $this->configurator = $configurator;
-        }
-
-        return $this->configurator;
-    }
-
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product $listingProduct
@@ -500,7 +502,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
 
             $validator->setParams($this->params);
             $validator->setListingProduct($listingProduct);
-            $validator->setConfigurator($this->getConfigurator());
+            $validator->setConfigurator($listingProduct->getActionConfigurator());
 
             $this->validatorsObjects[$listingProduct->getId()] = $validator;
         }
@@ -523,7 +525,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
 
             $request->setParams($this->params);
             $request->setListingProduct($listingProduct);
-            $request->setConfigurator($this->getConfigurator());
+            $request->setConfigurator($listingProduct->getActionConfigurator());
             $request->setValidatorsData($this->getValidatorObject($listingProduct)->getData());
 
             $this->requestsObjects[$listingProduct->getId()] = $request;
@@ -532,7 +534,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         return $this->requestsObjects[$listingProduct->getId()];
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product $listingProduct
@@ -564,7 +566,7 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
         return $this->requestsDataObjects[$listingProduct->getId()];
     }
 
-    // ########################################
+    //########################################
 
     private function getOrmActionType()
     {
@@ -581,10 +583,10 @@ abstract class Ess_M2ePro_Model_Connector_Amazon_Product_Requester
                 return 'Delete';
         }
 
-        throw new Exception('Wrong action type');
+        throw new Ess_M2ePro_Model_Exception('Wrong Action type');
     }
 
     abstract protected function getActionType();
 
-    // ########################################
+    //########################################
 }

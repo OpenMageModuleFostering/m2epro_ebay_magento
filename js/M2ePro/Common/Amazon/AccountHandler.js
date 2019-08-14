@@ -1,7 +1,7 @@
 CommonAmazonAccountHandler = Class.create();
 CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function()
     {
@@ -83,7 +83,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
             return value.length <= 5;
         });
 
-        Validation.add('M2ePro-require-select-attribute', M2ePro.translator.translate('If Yes is chosen, you must select at least one attribute for Product mapping.'), function(value, el) {
+        Validation.add('M2ePro-require-select-attribute', M2ePro.translator.translate('If Yes is chosen, you must select at least one Attribute for Product Mapping.'), function(value, el) {
 
             if ($('other_listings_mapping_mode').value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::OTHER_LISTINGS_MAPPING_MODE_NO')) {
                 return true;
@@ -99,9 +99,57 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
 
             return isAttributeSelected;
         });
+
+        Validation.add('M2ePro-account-repricing-price-value', M2ePro.translator.translate('Invalid input data. Decimal value required. Example 12.05'), function(value, el) {
+
+            if (!el.up('tr').visible()) {
+                return true;
+            }
+
+            if (!value.match(/^\d+[.]?\d*?$/g)) {
+                return false;
+            }
+
+            if (value <= 0) {
+                return false;
+            }
+
+            return true;
+        });
+
+        Validation.add('M2ePro-account-repricing-price-percent', M2ePro.translator.translate('Please enter correct value.'), function(value, el) {
+
+            if (!el.up('tr').visible()) {
+                return true;
+            }
+
+            if (!value.match(/^\d+$/g)) {
+                return false;
+            }
+
+            if (value <= 0 || value > 100) {
+                return false;
+            }
+
+            return true;
+
+        });
+
+        Validation.add('M2ePro-validate-price-coefficient', M2ePro.translator.translate('Coefficient is not valid.'), function(value) {
+
+            if (value == '') {
+                return true;
+            }
+
+            if (value == '0' || value == '0%') {
+                return false;
+            }
+
+            return value.match(/^[+-]?\d+[.]?\d*[%]?$/g);
+        });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     completeStep: function()
     {
@@ -109,17 +157,17 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         window.close();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     delete_click: function()
     {
-        if (!confirm(M2ePro.translator.translate('Be attentive! By deleting account you delete all information on it from M2E Pro server. This will cause inappropriate work of all accounts\' copies.'))) {
+        if (!confirm(M2ePro.translator.translate('Be attentive! By Deleting Account you delete all information on it from M2E Pro Server. This will cause inappropriate work of all Accounts\' copies.'))) {
             return;
         }
         setLocation(M2ePro.url.get('deleteAction'));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     changeMarketplace: function(id)
     {
@@ -150,7 +198,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         $('marketplaces_register_url_container_'+id).show();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     other_listings_synchronization_change: function()
     {
@@ -187,7 +235,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         $('other_listings_move_mode').simulate('change');
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     mapping_general_id_mode_change: function()
     {
@@ -237,7 +285,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     move_mode_change: function()
     {
@@ -248,26 +296,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    //----------------------------------
-
-    ordersModeChange: function()
-    {
-        var self = AmazonAccountHandlerObj;
-
-        if ($('orders_mode').value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::ORDERS_MODE_YES')) {
-            $('magento_block_amazon_accounts_magento_orders_listings').show();
-            $('magento_block_amazon_accounts_magento_orders_listings_other').show();
-        } else {
-            $('magento_block_amazon_accounts_magento_orders_listings').hide();
-            $('magento_block_amazon_accounts_magento_orders_listings_other').hide();
-        }
-
-        $('magento_orders_listings_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_LISTINGS_MODE_NO');
-        $('magento_orders_listings_other_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_LISTINGS_OTHER_MODE_NO');
-
-        self.magentoOrdersListingsModeChange();
-        self.magentoOrdersListingsOtherModeChange();
-    },
+    // ---------------------------------------
 
     magentoOrdersListingsModeChange: function()
     {
@@ -370,7 +399,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
     {
         if ($('magento_orders_fba_mode').value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_FBA_MODE_NO')) {
             $('magento_orders_fba_stock_mode_container').hide();
-            $('magento_orders_fba_stock_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_FBA_STOCK_MODE_YES');
+            $('magento_orders_fba_stock_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_FBA_STOCK_MODE_NO');
         } else {
             $('magento_orders_fba_stock_mode_container').show();
         }
@@ -433,6 +462,9 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
             $('magento_orders_fba_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_FBA_MODE_YES');
             $('magento_orders_fba_stock_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_FBA_STOCK_MODE_YES');
 
+            $('magento_block_amazon_accounts_magento_orders_refund_and_cancellation').hide();
+            $('magento_orders_refund').value = 1;
+
             $('magento_block_amazon_accounts_magento_orders_customer').hide();
             $('magento_orders_customer_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_CUSTOMER_MODE_GUEST');
             self.magentoOrdersCustomerModeChange();
@@ -442,7 +474,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
             self.magentoOrdersStatusMappingModeChange();
 
             $('magento_block_amazon_accounts_magento_orders_rules').hide();
-            $('magento_orders_qty_reservation_days').value = 0;
+            $('magento_orders_qty_reservation_days').value = 1;
 
             $('magento_block_amazon_accounts_magento_orders_tax').hide();
             $('magento_orders_tax_mode').value = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account::MAGENTO_ORDERS_TAX_MODE_MIXED');
@@ -451,6 +483,7 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         } else {
             $('magento_block_amazon_accounts_magento_orders_number').show();
             $('magento_block_amazon_accounts_magento_orders_fba').show();
+            $('magento_block_amazon_accounts_magento_orders_refund_and_cancellation').show();
             $('magento_block_amazon_accounts_magento_orders_customer').show();
             $('magento_block_amazon_accounts_magento_orders_status_mapping').show();
             $('magento_block_amazon_accounts_magento_orders_tax').show();
@@ -458,7 +491,170 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         }
     },
 
-    //----------------------------------
+    // Repricing Integration
+    // ---------------------------------------
+
+    linkOrRegisterRepricing: function()
+    {
+        return setLocation(M2ePro.url.get('adminhtml_common_amazon_account_repricing/linkOrRegister'));
+    },
+
+    unlinkRepricing: function()
+    {
+        if (!confirm(M2ePro.translator.translate('Are you sure?'))) {
+            return;
+        }
+
+        AmazonAccountHandlerObj.openUnlinkPage();
+    },
+
+    openUnlinkPage: function()
+    {
+        return setLocation(M2ePro.url.get('adminhtml_common_amazon_account_repricing/openUnlinkPage'));
+    },
+
+    openManagement: function()
+    {
+        window.open(M2ePro.url.get('adminhtml_common_amazon_account_repricing/openManagement'));
+    },
+
+    regular_price_mode_change: function()
+    {
+        var self = AmazonAccountHandlerObj,
+            regularPriceAttr = $('regular_price_attribute'),
+            regularPriceCoeficient = $('regular_price_coefficient_td'),
+            variationRegularPrice = $('regular_price_variation_mode_tr');
+
+        regularPriceAttr.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, regularPriceAttr);
+        }
+
+        regularPriceCoeficient.hide();
+        variationRegularPrice.hide();
+
+        if (this.value != M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL') &&
+            this.value != M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::REGULAR_PRICE_MODE_PRODUCT_POLICY')) {
+
+            regularPriceCoeficient.show();
+            variationRegularPrice.show();
+        }
+
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL')) {
+            $$('.repricing-min-price-mode-regular-depended').each(function (element) {
+                if (element.selected) {
+                    element.up().selectedIndex = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL');
+                    element.simulate('change');
+                }
+
+                element.hide();
+            });
+
+            $$('.repricing-max-price-mode-regular-depended').each(function (element) {
+                if (element.selected) {
+                    element.up().selectedIndex = M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL');
+                    element.simulate('change');
+                }
+
+                element.hide();
+            });
+        } else {
+            $$('.repricing-min-price-mode-regular-depended').each(function (element) {
+                element.show();
+            });
+
+            $$('.repricing-max-price-mode-regular-depended').each(function (element) {
+                element.show();
+            });
+        }
+    },
+
+    min_price_mode_change: function()
+    {
+        var self = AmazonAccountHandlerObj,
+            minPriceValueTr = $('min_price_value_tr'),
+            minPricePercentTr = $('min_price_percent_tr'),
+            minPriceWarning = $('min_price_warning_tr'),
+            minPriceAttr = $('min_price_attribute'),
+            minPriceCoeficient = $('min_price_coefficient_td'),
+            variationMinPrice = $('min_price_variation_mode_tr');
+
+        minPriceWarning.hide();
+        if (this.value != M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL')) {
+            minPriceWarning.show();
+        }
+
+        minPriceCoeficient.hide();
+        variationMinPrice.hide();
+
+        minPriceAttr.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, minPriceAttr);
+
+            minPriceCoeficient.show();
+            variationMinPrice.show();
+        }
+
+        minPriceValueTr.hide();
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::MIN_PRICE_MODE_REGULAR_VALUE')) {
+            minPriceValueTr.show();
+        }
+
+        minPricePercentTr.hide();
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::MIN_PRICE_MODE_REGULAR_PERCENT')) {
+            minPricePercentTr.show();
+        }
+    },
+
+    max_price_mode_change: function()
+    {
+        var self = AmazonAccountHandlerObj,
+            maxPriceValueTr = $('max_price_value_tr'),
+            maxPricePercentTr = $('max_price_percent_tr'),
+            maxPriceWarning = $('max_price_warning_tr'),
+            maxPriceAttr = $('max_price_attribute'),
+            maxPriceCoeficient = $('max_price_coefficient_td'),
+            variationMaxPrice = $('max_price_variation_mode_tr');
+
+        maxPriceWarning.hide();
+        if (this.value != M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_MANUAL')) {
+            maxPriceWarning.show();
+        }
+
+        maxPriceCoeficient.hide();
+        variationMaxPrice.hide();
+
+        maxPriceAttr.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::PRICE_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, maxPriceAttr);
+
+            maxPriceCoeficient.show();
+            variationMaxPrice.show();
+        }
+
+        maxPriceValueTr.hide();
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::MAX_PRICE_MODE_REGULAR_VALUE')) {
+            maxPriceValueTr.show();
+        }
+
+        maxPricePercentTr.hide();
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::MAX_PRICE_MODE_REGULAR_PERCENT')) {
+            maxPricePercentTr.show();
+        }
+    },
+
+    disable_mode_change: function()
+    {
+        var self = AmazonAccountHandlerObj,
+            disableModeAttr = $('disable_mode_attribute');
+
+        disableModeAttr.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Account_Repricing::DISABLE_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, disableModeAttr);
+        }
+    },
+
+    // ---------------------------------------
 
     saveAndClose: function()
     {
@@ -479,5 +675,5 @@ CommonAmazonAccountHandler.prototype = Object.extend(new CommonHandler(), {
         });
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

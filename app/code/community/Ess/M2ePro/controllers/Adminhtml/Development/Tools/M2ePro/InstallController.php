@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Development_Tools_M2ePro_InstallController
     extends Ess_M2ePro_Controller_Adminhtml_Development_CommandController
 {
-    //#############################################
+    //########################################
 
     /**
      * @title "Show Installation History"
@@ -16,21 +18,14 @@ class Ess_M2ePro_Adminhtml_Development_Tools_M2ePro_InstallController
      */
     public function showInstallationVersionHistoryAction()
     {
-        /** @var $cacheConfigCollection Mage_Core_Model_Mysql4_Collection_Abstract */
-        $cacheConfigCollection = Mage::helper('M2ePro/Module')->getCacheConfig()->getCollection();
-        $cacheConfigCollection->addFieldToFilter('`group`', '/installation/version/history/');
-        $cacheConfigCollection->getSelect()->order(
-            array('create_date DESC', 'key DESC')
-        );
-
-        $history = $cacheConfigCollection->toArray();
-        $history = $history['items'];
-
+        $history = Mage::getModel('M2ePro/Registry')->load('/installation/versions_history/', 'key')
+                                                    ->getValueFromJson();
         if (count($history) <= 0) {
             echo $this->getEmptyResultsHtml('Installation History is not available.');
             return;
         }
 
+        $history = array_reverse($history);
         $html = $this->getStyleHtml();
 
         $html .= <<<HTML
@@ -53,22 +48,22 @@ class Ess_M2ePro_Adminhtml_Development_Tools_M2ePro_InstallController
     </tr>
 HTML;
         $tdClass = 'color-first';
-        $previousItemDate = $history[0]['create_date'];
+        $previousItemDate = $history[0]['date'];
 
         foreach ($history as $item) {
 
-            !$item['value'] && $item['value'] = '--';
+            !$item['from'] && $item['from'] = '--';
 
-            if ((strtotime($previousItemDate) - strtotime($item['value'])) > 360) {
+            if ((strtotime($previousItemDate) - strtotime($item['from'])) > 360) {
                 $tdClass = $tdClass != 'color-second' ? 'color-second' : 'color-first';
             }
-            $previousItemDate = $item['create_date'];
+            $previousItemDate = $item['date'];
 
             $html .= <<<HTML
 <tr>
-    <td class="{$tdClass}">{$item['value']}</td>
-    <td class="{$tdClass}">{$item['key']}</td>
-    <td class="{$tdClass}">{$item['create_date']}</td>
+    <td class="{$tdClass}">{$item['from']}</td>
+    <td class="{$tdClass}">{$item['to']}</td>
+    <td class="{$tdClass}">{$item['date']}</td>
 </tr>
 HTML;
         }
@@ -77,34 +72,10 @@ HTML;
         print str_replace('%count%', count($history), $html);
     }
 
-    //#############################################
+    //########################################
 
     /**
-     * @title "Check Upgrade to 3.2.0"
-     * @description "Check extension installation"
-     * @confirm "Are you sure?"
-     */
-    public function checkInstallationCacheAction()
-    {
-        /** @var $installerInstance Ess_M2ePro_Model_Upgrade_MySqlSetup */
-        $installerInstance = new Ess_M2ePro_Model_Upgrade_MySqlSetup('M2ePro_setup');
-
-        /** @var $migrationInstance Ess_M2ePro_Model_Upgrade_Migration_ToVersion4 */
-        $migrationInstance = Mage::getModel('M2ePro/Upgrade_Migration_ToVersion4');
-        $migrationInstance->setInstaller($installerInstance);
-
-        $migrationInstance->startSetup();
-        $migrationInstance->migrate();
-        $migrationInstance->endSetup();
-
-        Mage::helper('M2ePro/Magento')->clearCache();
-
-        $this->_getSession()->addSuccess('Check installation was successfully completed.');
-        $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageToolsTabUrl());
-    }
-
-    /**
-     * @title "Repeat Upgrade > 3.2.0"
+     * @title "Repeat Upgrade > 4.1.0"
      * @description "Repeat Upgrade From Certain Version"
      * @new_line
      */
@@ -149,7 +120,7 @@ HTML;
               </form>';
     }
 
-    //#############################################
+    //########################################
 
     /**
      * @title "Check Files Validity"
@@ -157,8 +128,9 @@ HTML;
      */
     public function checkFilesValidityAction()
     {
-        $responseData = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher')
-                                    ->processVirtual('files','get','info');
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('files','get','info');
+        $responseData = $dispatcherObject->process($connectorObj);
 
         if (count($responseData) <= 0) {
             echo $this->getEmptyResultsHtml('No files info for this M2E Pro version on server.');
@@ -188,7 +160,6 @@ HTML;
                 );
                 continue;
             }
-
         }
 
         if (count($problems) <= 0) {
@@ -243,17 +214,19 @@ HTML;
     {
         $tablesInfo = Mage::helper('M2ePro/Module_Database_Structure')->getTablesInfo();
 
-        $responseData = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher')
-                            ->processVirtual('tables','get','diff',
-                                             array('tables_info' => json_encode($tablesInfo)));
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('tables','get','diff',
+                                                               array('tables_info' => json_encode($tablesInfo)));
+
+        $responseData = $dispatcherObject->process($connectorObj);
 
         if (!isset($responseData['diff'])) {
-            echo $this->getEmptyResultsHtml('No tables info for this M2E Pro version on server.');
+            echo $this->getEmptyResultsHtml('No Tables info for this M2E Pro version on Server.');
             return;
         }
 
         if (count($responseData['diff']) <= 0) {
-            echo $this->getEmptyResultsHtml('All tables are valid.');
+            echo $this->getEmptyResultsHtml('All Tables are valid.');
             return;
         }
 
@@ -278,38 +251,50 @@ HTML;
             foreach ($checkResult as $resultRow) {
 
                 $additionalInfo = '';
-                if (isset($resultRow['info']['diff_data'])) {
-                    foreach ($resultRow['info']['diff_data'] as $diffCode => $diffValue) {
+                $actionsHtml    = '';
+
+                if (!isset($resultRow['info'])) {
+                    continue;
+                }
+
+                $resultInfo = $resultRow['info'];
+                $diffData = isset($resultInfo['diff_data']) ? $resultInfo['diff_data'] : array();
+
+                if (isset($resultInfo['diff_data'])) {
+                    foreach ($resultInfo['diff_data'] as $diffCode => $diffValue) {
+
                         $additionalInfo .= "<b>{$diffCode}</b>: '{$diffValue}'. ";
-                        $additionalInfo .= "<b>original:</b> '{$resultRow['info']['original_data'][$diffCode]}'.";
+                        $additionalInfo .= "<b>original:</b> '{$resultInfo['original_data'][$diffCode]}'.";
                         $additionalInfo .= "<br/>";
                     }
                 }
 
-                $actionsHtml = '';
-                if (isset($resultRow['info'])) {
+                $urlParams = array(
+                    'table_name'  => $tableName,
+                    'column_info' => json_encode($resultInfo['original_data'])
+                );
 
-                    $urlParams = array(
-                        'table_name'  => $tableName,
-                        'column_info' => json_encode($resultRow['info']['original_data'])
-                    );
+                if (empty($resultInfo['current_data']) ||
+                    (isset($diffData['type']) || isset($diffData['default']) || isset($diffData['null']))) {
 
-                    $diffData = isset($resultRow['info']['diff_data']) ? $resultRow['info']['diff_data'] : array();
+                    $urlParams['mode'] = 'properties';
+                    $url = $this->getUrl('*/*/fixColumn', $urlParams);
+                    $actionsHtml .= "<a href=\"{$url}\">Fix Properties</a>";
+                }
 
-                    if (empty($resultRow['info']['current_data']) ||
-                        (isset($diffData['type']) || isset($diffData['default']) || isset($diffData['null']))) {
+                if (isset($diffData['key'])) {
 
-                        $urlParams['mode'] = 'properties';
-                        $url = $this->getUrl('*/*/fixColumn', $urlParams);
-                        $actionsHtml .= "<a href=\"{$url}\">Fix Properties</a>";
-                    }
+                    $urlParams['mode'] = 'index';
+                    $url = $this->getUrl('*/*/fixColumn', $urlParams);
+                    $actionsHtml .= "<a href=\"{$url}\">Fix Index</a>";
+                }
 
-                    if (isset($resultRow['info']['diff_data']) && isset($diffData['key'])) {
+                if (empty($resultInfo['original_data']) && !empty($resultInfo['current_data'])) {
 
-                        $urlParams['mode'] = 'index';
-                        $url = $this->getUrl('*/*/fixColumn', $urlParams);
-                        $actionsHtml .= "<a href=\"{$url}\">Fix Index</a>";
-                    }
+                    $urlParams['mode'] = 'drop';
+                    $urlParams['column_info'] = json_encode($resultInfo['current_data']);
+                    $url = $this->getUrl('*/*/fixColumn', $urlParams);
+                    $actionsHtml .= "<a href=\"{$url}\">Drop</a>";
                 }
 
                 $html .= <<<HTML
@@ -333,25 +318,49 @@ HTML;
      */
     public function checkConfigsValidityAction()
     {
-        $responseData = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher')
-                                ->processVirtual('configs','get','info');
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('configs','get','info');
+        $responseData = $dispatcherObject->process($connectorObj);
 
         if (!isset($responseData['configs_info'])) {
             echo $this->getEmptyResultsHtml('No configs info for this M2E Pro version on server.');
             return;
         }
 
-        $helper = Mage::helper('M2ePro/Module_Database_Structure');
+        $originalData = $responseData['configs_info'];
+        $currentData = array();
+
+        foreach ($originalData as $tableName => $configInfo) {
+
+            $currentData[$tableName] = Mage::helper('M2ePro/Module_Database_Structure')
+                                                ->getConfigSnapshot($tableName);
+        }
+
         $differenses = array();
 
-        foreach ($responseData['configs_info'] as $tableName => $configInfo) {
-
-            $currentInfo = $helper->getConfigSnapshot($tableName);
+        foreach ($originalData as $tableName => $configInfo) {
             foreach ($configInfo as $codeHash => $item) {
-                !array_key_exists($codeHash, $currentInfo) && $differenses[] = array(
-                    'table' => $tableName,
-                    'item'  => $item
-                );
+
+                if (array_key_exists($codeHash, $currentData[$tableName])) {
+                    continue;
+                }
+
+                $differenses[] = array('table'    => $tableName,
+                                       'item'     => $item,
+                                       'solution' => 'insert');
+            }
+        }
+
+        foreach ($currentData as $tableName => $configInfo) {
+            foreach ($configInfo as $codeHash => $item) {
+
+                if (array_key_exists($codeHash, $originalData[$tableName])) {
+                    continue;
+                }
+
+                $differenses[] = array('table'    => $tableName,
+                                       'item'     => $item,
+                                       'solution' => 'drop');
             }
         }
 
@@ -368,29 +377,47 @@ HTML;
 </h2>
 <br/>
 
-<table class="grid" cellpadding="0" cellspacing="0">
+<table class="grid" cellpadding="0" cellspacing="0" style="width: 100%;">
     <tr>
         <th style="width: 400px">Table</th>
-        <th>Group</th>
-        <th>Key</th>
-        <th style="width: 100px">Actions</th>
+        <th style="width: 200px">Group</th>
+        <th style="width: 200px">Key</th>
+        <th style="width: 150px">Value</th>
+        <th style="width: 50px">Action</th>
     </tr>
 HTML;
 
         foreach ($differenses as $index => $row) {
 
-            $url = $this->getUrl('*/adminhtml_development_database/addTableRow', array(
-                'table'  => $row['table'],
-                'model'  => Mage::helper('M2ePro/Module_Database_Structure')->getTableModel($row['table']),
-            ));
+            if ($row['solution'] == 'insert') {
+
+                $url = $this->getUrl('*/adminhtml_development_database/addTableRow', array(
+                    'table'  => $row['table'],
+                    'model'  => Mage::helper('M2ePro/Module_Database_Structure')->getTableModel($row['table']),
+                ));
+
+            } else {
+
+                $url = $this->getUrl('*/adminhtml_development_database/deleteTableRows', array(
+                    'table'  => $row['table'],
+                    'model'  => Mage::helper('M2ePro/Module_Database_Structure')->getTableModel($row['table']),
+                    'ids'    => $row['item']['id']
+                ));
+            }
+
+            $actionWord = $row['solution'] == 'insert' ? 'Insert' : 'Drop';
+            $styles = $row['solution'] == 'insert' ? '' : 'color: red;';
 
             $onclickAction = <<<JS
-var elem = $(this.id);
+var elem     = $(this.id),
+    formData = Form.serialize(elem.up('tr').down('form'));
+
+elem.up('tr').remove();
+
 new Ajax.Request( '{$url}' , {
     method: 'get',
-    asynchronous : false,
-    parameters : Form.serialize(elem.up('form')),
-    onSuccess: function(transport) { elem.up('tr').remove(); }
+    asynchronous : true,
+    parameters : formData
 });
 JS;
         $html .= <<<HTML
@@ -407,9 +434,11 @@ JS;
             <input type="hidden" name="value_group" value="{$row['item']['group']}">
             <input type="hidden" name="value_key" value="{$row['item']['key']}">
             <input type="text" name="value_value" value="{$row['item']['value']}">
-
-            <a id="insert_id_{$index}" onclick="{$onclickAction}" href="javascript:void(0);">Insert</a>
         </form>
+    </td>
+    <td align="center">
+        <a id="insert_id_{$index}" style= "{$styles}"
+           onclick="{$onclickAction}" href="javascript:void(0);">{$actionWord}</a>
     </td>
 </tr>
 HTML;
@@ -419,7 +448,7 @@ HTML;
         print str_replace('%count%',count($differenses),$html);
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     /**
      * @hidden
@@ -432,7 +461,7 @@ HTML;
 
         $repairMode = $this->getRequest()->getParam('mode');
 
-        if (!$tableName || !$repairMode || empty($columnInfo)) {
+        if (!$tableName || !$repairMode) {
             $this->_redirect('*/*/checkTablesStructureValidity');
             return;
         }
@@ -440,6 +469,7 @@ HTML;
         $helper = Mage::helper('M2ePro/Module_Database_Repair');
         $repairMode == 'index' && $helper->fixColumnIndex($tableName, $columnInfo);
         $repairMode == 'properties' && $helper->fixColumnProperties($tableName, $columnInfo);
+        $repairMode == 'drop' && $helper->dropColumn($tableName, $columnInfo);
 
         $this->_redirect('*/*/checkTablesStructureValidity');
     }
@@ -459,8 +489,11 @@ HTML;
             'path'    => $originalPath ? $originalPath : $filePath
         );
 
-        $responseData = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher')
-                                ->processVirtual('files','get','diff', $params);
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('files','get','diff',
+                                                               $params);
+
+        $responseData = $dispatcherObject->process($connectorObj);
 
         $html = $this->getStyleHtml();
 
@@ -520,12 +553,13 @@ HTML;
         print str_replace('%count%',count($unWritableDirectories),$html);
     }
 
-    //#############################################
+    //########################################
 
     /**
      * @title "Reset Module (Clear Installation)"
      * @description "Clear all M2ePro data tables, reset wizards"
-     * @confirm "Are you sure?"
+     * @confirm "This will remove all M2e Pro data. Are you sure?"
+     * @non-production
      */
     public function fullResetModuleStateAction()
     {
@@ -537,17 +571,24 @@ HTML;
         $connWrite->update(
             Mage::getSingleton('core/resource')->getTableName('m2epro_primary_config'),
             array('value' => null),
-            '`group` LIKE \'%license%\''
+            "`group` LIKE '%license%'"
         );
         $connWrite->update(
             Mage::getSingleton('core/resource')->getTableName('m2epro_config'),
             array('value' => 1),
-            '`key` = \'mode\' AND `group` LIKE \'/component/%\''
+            "`key` = 'mode' AND `group` LIKE '/component/%'"
         );
+
+        $skipWizards = array('migrationToV6','migrationNewAmazon','removedPay','ebayProductDetails',
+                             'fullAmazonCategories','amazonShippingOverridePolicy');
+
+        array_walk($skipWizards, function(&$el, $key) { $el = "'{$el}'"; });
+        $skipWizards = implode(',', $skipWizards);
+
         $connWrite->update(
             Mage::getSingleton('core/resource')->getTableName('m2epro_wizard'),
             array('status' => 0, 'step' => null),
-            '`nick` <> \'migrationToV6\' AND `nick` <> \'migrationNewAmazon\''
+            "nick NOT IN ({$skipWizards})"
         );
 
         Mage::helper('M2ePro/Magento')->clearCache();
@@ -559,9 +600,10 @@ HTML;
     /**
      * @title "Reset Module (Without Wizards)"
      * @description "Clear all M2ePro data tables, set wizards as skipped"
-     * @confirm "Are you sure?"
+     * @confirm "This will remove all M2e Pro data. Are you sure?"
+     * @non-production
      */
-    public function ResetModuleStateAndSkippingWizardsAction()
+    public function resetModuleStateAndSkippingWizardsAction()
     {
         $this->truncateModuleTables();
 
@@ -571,7 +613,7 @@ HTML;
         $connWrite->update(
             Mage::getSingleton('core/resource')->getTableName('m2epro_config'),
             array('value' => 1),
-            '`key` = \'mode\' AND `group` LIKE \'/component/%\''
+            "`key` = 'mode' AND `group` LIKE '/component/%'"
         );
         $connWrite->update(
             Mage::getSingleton('core/resource')->getTableName('m2epro_wizard'),
@@ -584,7 +626,7 @@ HTML;
         $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageToolsTabUrl());
     }
 
-    //------------------------------------
+    // ---------------------------------------
 
     private function truncateModuleTables()
     {
@@ -602,7 +644,6 @@ HTML;
             'm2epro_amazon_marketplace',
             'm2epro_buy_marketplace',
             'm2epro_ebay_marketplace',
-            'm2epro_play_marketplace',
 
             'm2epro_wizard'
         );
@@ -613,7 +654,7 @@ HTML;
         }
     }
 
-    //#############################################
+    //########################################
 
     private function getEmptyResultsHtml($messageText)
     {
@@ -627,5 +668,5 @@ HTML;
 HTML;
     }
 
-    //#############################################
+    //########################################
 }

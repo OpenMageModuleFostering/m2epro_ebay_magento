@@ -1,19 +1,39 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Helper_Module_Exception extends Mage_Core_Helper_Abstract
 {
-    const FILTER_TYPE_TYPE = 1;
-    const FILTER_TYPE_INFO = 2;
+    const FILTER_TYPE_TYPE    = 1;
+    const FILTER_TYPE_INFO    = 2;
+    const FILTER_TYPE_MESSAGE = 3;
 
-    // ########################################
+    //########################################
 
-    public function process(Exception $exception)
+    public function process(Exception $exception, $sendToServer = true)
     {
         try {
+
+            $type = get_class($exception);
+
+            $info = $this->getExceptionInfo($exception, $type);
+            $info .= $this->getExceptionStackTraceInfo($exception);
+            $info .= $this->getCurrentUserActionInfo();
+            $info .= Mage::helper('M2ePro/Module_Support_Form')->getSummaryInfo();
+
+            $this->log($info, $type);
+
+            if (!$sendToServer ||
+                ($exception instanceof Ess_M2ePro_Model_Exception && !$exception->isSendToServer()) ||
+                !(bool)(int)Mage::helper('M2ePro/Module')->getConfig()
+                                ->getGroupValue('/debug/exceptions/','send_to_server') ||
+                $this->isExceptionFiltered($info, $exception->getMessage(), $type)) {
+                return;
+            }
 
             $temp = Mage::helper('M2ePro/Data_Global')->getValue('send_exception_to_server');
             if (!empty($temp)) {
@@ -21,22 +41,7 @@ class Ess_M2ePro_Helper_Module_Exception extends Mage_Core_Helper_Abstract
             }
             Mage::helper('M2ePro/Data_Global')->setValue('send_exception_to_server', true);
 
-            if ((bool)(int)Mage::helper('M2ePro/Module')->getConfig()
-                                ->getGroupValue('/debug/exceptions/','send_to_server')) {
-
-                $type = get_class($exception);
-
-                $info = $this->getExceptionInfo($exception, $type);
-                $info .= $this->getExceptionStackTraceInfo($exception);
-                $info .= $this->getCurrentUserActionInfo();
-                $info .= Mage::helper('M2ePro/Module_Support_Form')->getSummaryInfo();
-
-                if ($this->isExceptionFiltered($info, $type)) {
-                    return;
-                }
-
-                $this->send($info, $type);
-            }
+            $this->send($info, $exception->getMessage(), $type);
 
             Mage::helper('M2ePro/Data_Global')->unsetValue('send_exception_to_server');
 
@@ -47,35 +52,35 @@ class Ess_M2ePro_Helper_Module_Exception extends Mage_Core_Helper_Abstract
     {
         try {
 
+            $type = 'Fatal Error';
+
+            $info = $this->getFatalInfo($error, $type);
+            $info .= $traceInfo;
+            $info .= $this->getCurrentUserActionInfo();
+            $info .= Mage::helper('M2ePro/Module_Support_Form')->getSummaryInfo();
+
+            $this->log($info, $type);
+
+            if (!(bool)(int)Mage::helper('M2ePro/Module')->getConfig()
+                                ->getGroupValue('/debug/fatal_error/','send_to_server') ||
+                $this->isExceptionFiltered($info, $error['message'], $type)) {
+                return;
+            }
+
             $temp = Mage::helper('M2ePro/Data_Global')->getValue('send_exception_to_server');
             if (!empty($temp)) {
                 return;
             }
             Mage::helper('M2ePro/Data_Global')->setValue('send_exception_to_server', true);
 
-            if ((bool)(int)Mage::helper('M2ePro/Module')->getConfig()
-                                ->getGroupValue('/debug/fatal_error/','send_to_server')) {
-
-                $type = 'Fatal Error';
-
-                $info = $this->getFatalInfo($error, $type);
-                $info .= $traceInfo;
-                $info .= $this->getCurrentUserActionInfo();
-                $info .= Mage::helper('M2ePro/Module_Support_Form')->getSummaryInfo();
-
-                if ($this->isExceptionFiltered($info, $type)) {
-                    return;
-                }
-
-                $this->send($info, $type);
-            }
+            $this->send($info, $error['message'], $type);
 
             Mage::helper('M2ePro/Data_Global')->unsetValue('send_exception_to_server');
 
         } catch (Exception $exceptionTemp) {}
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     public function setFatalErrorHandler()
     {
@@ -110,18 +115,36 @@ class Ess_M2ePro_Helper_Module_Exception extends Mage_Core_Helper_Abstract
         return Mage::helper('M2ePro')->__('Fatal error occurred').': "'.$exception->getMessage().'".';
     }
 
-    // ########################################
+    //########################################
+
+    private function log($message, $type)
+    {
+        /** @var Ess_M2ePro_Model_Log_System $log */
+        $log = Mage::getModel('M2ePro/Log_System');
+
+        $log->setType($type);
+        $log->setDescription($message);
+
+        $log->save();
+    }
+
+    //########################################
 
     private function getExceptionInfo(Exception $exception, $type)
     {
+        $additionalData = $exception instanceof Ess_M2ePro_Model_Exception ? $exception->getAdditionalData()
+                                                                           : '';
+
+        is_array($additionalData) && $additionalData = print_r($additionalData, true);
+
         $exceptionInfo = <<<EXCEPTION
 -------------------------------- EXCEPTION INFO ----------------------------------
 Type: {$type}
 File: {$exception->getFile()}
 Line: {$exception->getLine()}
-Message: {$exception->getMessage()}
 Code: {$exception->getCode()}
-
+Message: {$exception->getMessage()}
+Additional Data: {$additionalData}
 
 EXCEPTION;
 
@@ -140,11 +163,11 @@ TRACE;
         return $stackTraceInfo;
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     private function getFatalInfo($error, $type)
     {
-        $exceptionInfo = <<<FATAL
+        $fatalInfo = <<<FATAL
 -------------------------------- FATAL ERROR INFO --------------------------------
 Type: {$type}
 File: {$error['file']}
@@ -154,7 +177,7 @@ Message: {$error['message']}
 
 FATAL;
 
-        return $exceptionInfo;
+        return $fatalInfo;
     }
 
     public function getFatalStackTraceInfo($stackTrace)
@@ -200,7 +223,7 @@ TRACE;
         return $stackTraceInfo;
     }
 
-    //-----------------------------------------
+    // ---------------------------------------
 
     private function getCurrentUserActionInfo()
     {
@@ -219,40 +242,39 @@ ACTION;
         return $actionInfo;
     }
 
-    // ########################################
+    //########################################
 
-    private function send($info, $type)
+    private function send($info, $message, $type)
     {
-        Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher')
-                ->processVirtual('exception','add','entity',
-                                 array('info' => $info, 'type' => $type));
+        $dispatcherObject = Mage::getModel('M2ePro/Connector_M2ePro_Dispatcher');
+        $connectorObj = $dispatcherObject->getVirtualConnector('exception','add','entity',
+                                                               array('info'    => $info,
+                                                                     'message' => $message,
+                                                                     'type'    => $type));
+
+        $dispatcherObject->process($connectorObj);
     }
 
-    private function isExceptionFiltered($info, $type)
+    private function isExceptionFiltered($info, $message, $type)
     {
         if (!(bool)(int)Mage::helper('M2ePro/Module')->getConfig()
                             ->getGroupValue('/debug/exceptions/','filters_mode')) {
             return false;
         }
 
-        /** @var $connRead Varien_Db_Adapter_Pdo_Mysql */
-        $connRead = Mage::getSingleton('core/resource')->getConnection('core_read');
-        $tableName = Mage::getSingleton('core/resource')->getTableName('m2epro_exceptions_filters');
-
-        $exceptionFilters = $connRead->select()
-                                     ->from($tableName,array('preg_match','type'))
-                                     ->query()
-                                     ->fetchAll();
+        $exceptionFilters = Mage::getModel('M2ePro/Registry')->load('/exceptions_filters/', 'key')
+                                                             ->getValueFromJson();
 
         foreach ($exceptionFilters as $exceptionFilter) {
 
             try {
 
-                if ($exceptionFilter['type'] == self::FILTER_TYPE_TYPE) {
-                    $tempResult = preg_match($exceptionFilter['preg_match'],$type);
-                } else {
-                    $tempResult = preg_match($exceptionFilter['preg_match'],$info);
-                }
+                $searchSubject = '';
+                $exceptionFilter['type'] == self::FILTER_TYPE_TYPE    && $searchSubject = $type;
+                $exceptionFilter['type'] == self::FILTER_TYPE_MESSAGE && $searchSubject = $message;
+                $exceptionFilter['type'] == self::FILTER_TYPE_INFO    && $searchSubject = $info;
+
+                $tempResult = preg_match($exceptionFilter['preg_match'], $searchSubject);
 
             } catch (Exception $exception) {
                 return false;
@@ -266,5 +288,5 @@ ACTION;
         return false;
     }
 
-    // ########################################
+    //########################################
 }

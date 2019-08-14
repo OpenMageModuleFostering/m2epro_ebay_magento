@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Common_ListingController
     extends Ess_M2ePro_Controller_Adminhtml_Common_MainController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -16,27 +18,48 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
              ->_title(Mage::helper('M2ePro')->__('Listings'));
 
         $this->getLayout()->getBlock('head')
-             ->addCss('M2ePro/css/Plugin/DropDown.css')
-             ->addCss('M2ePro/css/Plugin/AutoComplete.css')
+            ->addCss('M2ePro/css/Plugin/ProgressBar.css')
+            ->addCss('M2ePro/css/Plugin/AreaWrapper.css')
+            ->addCss('M2ePro/css/Plugin/DropDown.css')
+            ->addCss('M2ePro/css/Plugin/AutoComplete.css')
 
-             ->addJs('M2ePro/Plugin/DropDown.js')
-             ->addJs('M2ePro/Plugin/AutoComplete.js')
-             ->addJs('M2ePro/Plugin/ActionColumn.js')
+            ->addJs('M2ePro/ActionHandler.js')
+            ->addJs('M2ePro/GridHandler.js')
 
-             ->addJs('M2ePro/Listing/EditListingTitle.js')
-            ;
+            ->addJs('M2ePro/Plugin/ActionColumn.js')
+            ->addJs('M2ePro/Plugin/AreaWrapper.js')
+            ->addJs('M2ePro/Plugin/AutoComplete.js')
+            ->addJs('M2ePro/Plugin/DropDown.js')
+            ->addJs('M2ePro/Plugin/ProgressBar.js')
+
+            ->addJs('M2ePro/Listing/EditListingTitle.js')
+            ->addJs('M2ePro/Listing/MovingHandler.js')
+            ->addJs('M2ePro/Listing/Other/GridHandler.js')
+
+            ->addJs('M2ePro/Common/Listing.js')
+            ->addJs('M2ePro/Common/Listing/Other/GridHandler.js')
+            ->addJs('M2ePro/Common/Buy/Listing/Other/GridHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/AfnQtyHandler.js')
+            ->addJs('M2ePro/Common/Amazon/Listing/Other/GridHandler.js')
+
+            ->addJs('M2ePro/Listing/Other/AutoMappingHandler.js')
+            ->addJs('M2ePro/Listing/Other/MappingHandler.js')
+            ->addJs('M2ePro/Listing/Other/RemovingHandler.js')
+            ->addJs('M2ePro/Listing/Other/UnmappingHandler.js');
 
         $this->_initPopUp();
+
+        $this->setComponentPageHelpLink('Listings+Overview');
 
         return $this;
     }
 
     protected function _isAllowed()
     {
-        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/listings/listing');
+        return Mage::getSingleton('admin/session')->isAllowed('m2epro_common/listings');
     }
 
-    //#############################################
+    //########################################
 
     public function indexAction()
     {
@@ -50,13 +73,47 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
             Mage::helper('M2ePro')->__('You must create at least one synchronization policy first.')
         );*/
 
-        $this->_initAction();
-
-        $this->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_listing'))
+        $this->_initAction()
+             ->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_common_manageListings'))
              ->renderLayout();
     }
 
-    //#############################################
+    //########################################
+
+    public function getListingTabAction()
+    {
+        if (!$this->getRequest()->isXmlHttpRequest()) {
+            $this->_redirect('*/adminhtml_common_listing/index');
+        }
+
+        $this->getResponse()->setBody(
+            $this->loadLayout()->getLayout()->createBlock('M2ePro/adminhtml_common_listing')->toHtml()
+        );
+    }
+
+    public function getListingOtherTabAction()
+    {
+        if (!$this->getRequest()->isXmlHttpRequest()) {
+            $this->_redirect('*/adminhtml_common_listing/index');
+        }
+
+        $this->getResponse()->setBody(
+            $this->loadLayout()->getLayout()->createBlock('M2ePro/adminhtml_common_listing_other')->toHtml()
+        );
+    }
+
+    public function getSearchTabAction()
+    {
+        if (!$this->getRequest()->isXmlHttpRequest()) {
+            $this->_redirect('*/adminhtml_common_listing/index');
+        }
+
+        $this->getResponse()->setBody(
+            $this->loadLayout()->getLayout()->createBlock('M2ePro/adminhtml_common_listing_search')->toHtml()
+        );
+    }
+
+    //########################################
 
     public function saveTitleAction()
     {
@@ -73,7 +130,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         Mage::getModel('M2ePro/Listing_Log')->updateListingTitle($listingId, $title);
     }
 
-    //#############################################
+    //########################################
 
     public function searchAction()
     {
@@ -88,7 +145,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         $this->getResponse()->setBody($block->toHtml());
     }
 
-    //#############################################
+    //########################################
 
     public function goToSellingFormatTemplateAction()
     {
@@ -134,7 +191,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         $this->_redirectUrl($url);
     }
 
-    //#############################################
+    //########################################
 
     public function confirmTutorialAction()
     {
@@ -157,7 +214,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         );
     }
 
-    //#############################################
+    //########################################
 
     public function getVariationEditPopupAction()
     {
@@ -185,7 +242,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         )));
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     public function getVariationManagePopupAction()
     {
@@ -213,7 +270,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         )));
     }
 
-    //#############################################
+    //########################################
 
     public function variationEditAction()
     {
@@ -251,7 +308,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         if (count($magentoVariations) != 1) {
             return $this->getResponse()->setBody(json_encode(array(
                 'type' => 'error',
-                'message' => Mage::helper('M2ePro')->__('Only 1 variation must leave.')
+                'message' => Mage::helper('M2ePro')->__('Only 1 Variation must leave.')
             )));
         }
 
@@ -335,7 +392,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
             if (count($tempMagentoVariations) != 1) {
                 return $this->getResponse()->setBody(json_encode(array(
                     'type' => 'error',
-                    'message' => Mage::helper('M2ePro')->__('Only 1 variation must leave.')
+                    'message' => Mage::helper('M2ePro')->__('Only 1 Variation must leave.')
                 )));
             }
 
@@ -399,7 +456,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
 
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     public function variationManageGenerateAction()
     {
@@ -482,7 +539,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
 
     }
 
-    //#############################################
+    //########################################
 
     public function duplicateProductsAction()
     {
@@ -514,7 +571,7 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         )));
     }
 
-    //#############################################
+    //########################################
 
     private function duplicateListingProduct(Ess_M2ePro_Model_Listing_Product $listingProduct)
     {
@@ -538,5 +595,5 @@ class Ess_M2ePro_Adminhtml_Common_ListingController
         return $duplicatedListingProduct;
     }
 
-    //#############################################
+    //########################################
 }

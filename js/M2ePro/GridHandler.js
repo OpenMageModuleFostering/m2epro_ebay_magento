@@ -1,6 +1,6 @@
 GridHandler = Class.create(CommonHandler, {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function(gridId)
     {
@@ -8,7 +8,7 @@ GridHandler = Class.create(CommonHandler, {
         this.prepareActions();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     afterInitPage: function()
     {
@@ -22,7 +22,7 @@ GridHandler = Class.create(CommonHandler, {
         }).bind(this));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getGridObj: function()
     {
@@ -34,7 +34,7 @@ GridHandler = Class.create(CommonHandler, {
         return window[this.gridId + '_massactionJsObject'];
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getCellContent: function(rowId,cellIndex)
     {
@@ -55,7 +55,7 @@ GridHandler = Class.create(CommonHandler, {
         return '';
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getProductNameByRowId: function(rowId)
     {
@@ -66,7 +66,7 @@ GridHandler = Class.create(CommonHandler, {
         return (matches && !Object.isUndefined(matches[1])) ? matches[1] : '';
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     selectAll: function()
     {
@@ -84,7 +84,7 @@ GridHandler = Class.create(CommonHandler, {
         this.getGridObj().reload();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     selectByRowId: function(rowId)
     {
@@ -106,7 +106,7 @@ GridHandler = Class.create(CommonHandler, {
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getSelectedProductsString: function()
     {
@@ -118,14 +118,30 @@ GridHandler = Class.create(CommonHandler, {
         return this.getSelectedProductsString().split(',');
     },
 
-    //----------------------------------
+    getOrderedSelectedProductsArray: function()
+    {
+        var selectedProductsArray = this.getSelectedProductsArray();
+        var checkboxesValuesArray = this.getGridMassActionObj().getCheckboxesValuesAsString().split(',');
+
+        var orderedSelectedProductArray = [];
+
+        checkboxesValuesArray.forEach(function (value) {
+            if (selectedProductsArray.indexOf(value) >= 0) {
+                orderedSelectedProductArray.push(value);
+            }
+        });
+
+        return orderedSelectedProductArray;
+    },
+
+    // ---------------------------------------
 
     confirm: function()
     {
         return confirm(M2ePro.translator.translate('Are you sure?'));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     massActionSubmitClick: function()
     {
@@ -137,7 +153,7 @@ GridHandler = Class.create(CommonHandler, {
         var selectAction = true;
         $$('select#'+this.gridId+'_massaction-select option').each(function(o) {
             if (o.selected && o.value == '') {
-                alert(M2ePro.translator.translate('Please select action.'));
+                alert(M2ePro.translator.translate('Please select Action.'));
                 selectAction = false;
                 return;
             }
@@ -160,7 +176,7 @@ GridHandler = Class.create(CommonHandler, {
             }
 
             if (!o.value || !this.actions[o.value + 'Action']) {
-                return alert(M2ePro.translator.translate('Please select action.'));
+                return alert(M2ePro.translator.translate('Please select Action.'));
             }
 
             this.actions[o.value + 'Action']();
@@ -168,7 +184,7 @@ GridHandler = Class.create(CommonHandler, {
         }).bind(this));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     viewItemHelp: function(rowId, data, hideViewLog)
     {
@@ -226,7 +242,7 @@ GridHandler = Class.create(CommonHandler, {
         $('grid_help_icon_close_'+rowId).hide();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     createHelpTitleHtml: function(rowId)
     {
@@ -238,7 +254,7 @@ GridHandler = Class.create(CommonHandler, {
     createSynchNoteHtml: function(synchNote)
     {
 
-        return '<div style="text-align: left"><ul class="messages"><li class="error-msg"><ul>' +
+        return '<div style="text-align: left"><ul class="messages"><li class="warning-msg"><ul>' +
                     '<li>'+synchNote+'</li>' +
         '</ul></li></ul></div>';
     },
@@ -327,7 +343,7 @@ GridHandler = Class.create(CommonHandler, {
         return html;
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     createHelpViewAllLogHtml: function(rowId)
     {
@@ -336,26 +352,26 @@ GridHandler = Class.create(CommonHandler, {
                '</a></div>';
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getLogViewUrl: function(rowId)
     {
         alert('abstract getLogViewUrl');
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     prepareActions: function()
     {
         alert('abstract prepareActions');
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     getComponent: function()
     {
         alert('abstract getComponent');
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

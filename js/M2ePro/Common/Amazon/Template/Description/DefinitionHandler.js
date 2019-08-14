@@ -1,11 +1,11 @@
 CommonAmazonTemplateDescriptionDefinitionHandler = Class.create();
 CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function() { },
 
-    //----------------------------------
+    // ---------------------------------------
 
     title_mode_change: function()
     {
@@ -15,58 +15,92 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
 
     brand_mode_change: function()
     {
-        var customAttributeTr = $('brand_custom_attribute_tr'),
-            customValueTr     = $('brand_custom_value_tr');
+        var customAttribute = $('brand_custom_attribute'),
+            customValueTr   = $('brand_custom_value_tr');
 
-        customAttributeTr.hide();
         customValueTr.hide();
 
+        customAttribute.value = '';
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::BRAND_MODE_CUSTOM_VALUE')) {
             customValueTr.show();
         }
 
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::BRAND_MODE_CUSTOM_ATTRIBUTE')) {
-            customAttributeTr.show();
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, customAttribute);
         }
     },
 
     manufacturer_mode_change: function()
     {
-        var customAttributeTr = $('manufacturer_custom_attribute_tr'),
-            customValueTr     = $('manufacturer_custom_value_tr');
+        var customAttribute = $('manufacturer_custom_attribute'),
+            customValueTr   = $('manufacturer_custom_value_tr');
 
-        customAttributeTr.hide();
         customValueTr.hide();
 
+        customAttribute.value = '';
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::MANUFACTURER_MODE_CUSTOM_VALUE')) {
             customValueTr.show();
         }
 
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::MANUFACTURER_MODE_CUSTOM_ATTRIBUTE')) {
-            customAttributeTr.show();
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, customAttribute);
         }
     },
 
     manufacturer_part_number_mode_change: function()
     {
-        var customAttributeTr = $('manufacturer_part_number_custom_attribute_tr'),
-            customValueTr     = $('manufacturer_part_number_custom_value_tr');
+        var customAttribute = $('manufacturer_part_number_custom_attribute'),
+            customValueTr   = $('manufacturer_part_number_custom_value_tr');
 
-        customAttributeTr.hide();
         customValueTr.hide();
 
+        customAttribute.value = '';
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::MANUFACTURER_PART_NUMBER_MODE_CUSTOM_VALUE')) {
             customValueTr.show();
         }
 
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::MANUFACTURER_PART_NUMBER_MODE_CUSTOM_ATTRIBUTE')) {
-            customAttributeTr.show();
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, customAttribute);
         }
     },
 
-    //----------------------------------
+    onChangeItemPackageQuantityMode: function()
+    {
+        var targetCustomValue     = $('item_package_quantity_custom_value_tr'),
+            targetCustomAttribute = $('item_package_quantity_custom_attribute');
 
-    weightModeChange: function(customValueTr, customAttributeTr, weightUnitTr, weightUnitMode, value)
+        targetCustomValue.hide();
+
+        targetCustomAttribute.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::ITEM_PACKAGE_QUANTITY_MODE_CUSTOM_VALUE')) {
+            targetCustomValue.show();
+        }
+
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::ITEM_PACKAGE_QUANTITY_MODE_CUSTOM_ATTRIBUTE')) {
+            AmazonTemplateDescriptionHandlerObj.updateHiddenValue(this, targetCustomAttribute);
+        }
+    },
+
+    onChangeNumberOfItemsMode: function()
+    {
+        var targetCustomValue     = $('number_of_items_custom_value_tr'),
+           targetCustomAttribute = $('number_of_items_custom_attribute');
+
+        targetCustomValue.hide();
+
+        targetCustomAttribute.value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::NUMBER_OF_ITEMS_MODE_CUSTOM_VALUE')) {
+            targetCustomValue.show();
+        }
+
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::NUMBER_OF_ITEMS_MODE_CUSTOM_ATTRIBUTE')) {
+            AmazonTemplateDescriptionHandlerObj.updateHiddenValue(this, targetCustomAttribute);
+        }
+    },
+
+    // ---------------------------------------
+
+    volumeModeChange: function(customValueTr, customAttributeTr, weightUnitTr, weightUnitMode, value)
     {
         customValueTr.hide();
         customAttributeTr.hide();
@@ -89,27 +123,51 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
         weightUnitMode.simulate('change');
     },
 
-    weightUnitOfMeasureChange: function(customValueTr, customAttributeTr, value)
+    weightModeChange: function(customValueTr, customAttribute, weightUnitTr, weightUnitMode, value)
     {
         customValueTr.hide();
-        customAttributeTr.hide();
+        weightUnitTr.hide();
 
-        if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::WEIGHT_UNIT_OF_MEASURE_MODE_CUSTOM_VALUE')) {
+        customAttribute.value = '';
+        if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::DIMENSION_VOLUME_MODE_NONE')) {
+            weightUnitMode.value = '';
+        }
+
+        if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::DIMENSION_VOLUME_MODE_CUSTOM_VALUE')) {
             customValueTr.show();
+            weightUnitTr.show();
+        }
+
+        if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::DIMENSION_VOLUME_MODE_CUSTOM_ATTRIBUTE')) {
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, customAttribute);
+            weightUnitTr.show();
+        }
+
+        weightUnitMode.simulate('change');
+    },
+
+    weightUnitOfMeasureChangeAll: function(customValue, customAttribute, value)
+    {
+        var self = AmazonTemplateDescriptionDefinitionHandlerObj;
+
+        customValue.value = '';
+        customAttribute.value = '';
+        if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::WEIGHT_UNIT_OF_MEASURE_MODE_CUSTOM_VALUE')) {
+            self.updateHiddenValue(this, customValue);
         }
 
         if (value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::WEIGHT_UNIT_OF_MEASURE_MODE_CUSTOM_ATTRIBUTE')) {
-            customAttributeTr.show();
+            self.updateHiddenValue(this, customAttribute);
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     item_dimensions_volume_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightModeChange(
+        self.volumeModeChange(
             $('item_dimensions_volume_custom_value_tr'), $('item_dimensions_volume_custom_attribute_tr'),
             $('item_dimensions_volume_unit_of_measure_mode_tr'), $('item_dimensions_volume_unit_of_measure_mode'),
             this.value
@@ -119,9 +177,10 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     item_dimensions_volume_unit_of_measure_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
-
-        self.weightUnitOfMeasureChange(
-            $('item_dimensions_volume_unit_of_measure_custom_value_tr'), $('item_dimensions_volume_unit_of_measure_custom_attribute_tr'),
+        self.weightUnitOfMeasureChangeAll.call(
+            this,
+            $('item_dimensions_volume_unit_of_measure_custom_value'),
+            $('item_dimensions_volume_unit_of_measure_custom_attribute'),
             this.value
         );
     },
@@ -129,10 +188,12 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     item_dimensions_weight_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
-
-        self.weightModeChange(
-            $('item_dimensions_weight_custom_value_tr'), $('item_dimensions_weight_custom_attribute_tr'),
-            $('item_dimensions_weight_unit_of_measure_mode_tr'), $('item_dimensions_weight_unit_of_measure_mode'),
+        self.weightModeChange.call(
+            this,
+            $('item_dimensions_weight_custom_value_tr'),
+            $('item_dimensions_weight_custom_attribute'),
+            $('item_dimensions_weight_unit_of_measure_mode_tr'),
+            $('item_dimensions_weight_unit_of_measure_mode'),
             this.value
         );
     },
@@ -140,20 +201,21 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     item_dimensions_weight_unit_of_measure_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
-
-        self.weightUnitOfMeasureChange(
-            $('item_dimensions_weight_unit_of_measure_custom_value_tr'), $('item_dimensions_weight_unit_of_measure_custom_attribute_tr'),
+        self.weightUnitOfMeasureChangeAll.call(
+            this,
+            $('item_dimensions_weight_unit_of_measure_custom_value'),
+            $('item_dimensions_weight_unit_of_measure_custom_attribute'),
             this.value
         );
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     package_dimensions_volume_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightModeChange(
+        self.volumeModeChange(
             $('package_dimensions_volume_custom_value_tr'), $('package_dimensions_volume_custom_attribute_tr'),
             $('package_dimensions_volume_unit_of_measure_mode_tr'), $('package_dimensions_volume_unit_of_measure_mode'),
             this.value
@@ -164,21 +226,26 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightUnitOfMeasureChange(
-            $('package_dimensions_volume_unit_of_measure_custom_value_tr'), $('package_dimensions_volume_unit_of_measure_custom_attribute_tr'),
+        self.weightUnitOfMeasureChangeAll.call(
+            this,
+            $('package_dimensions_volume_unit_of_measure_custom_value'),
+            $('package_dimensions_volume_unit_of_measure_custom_attribute'),
             this.value
         );
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     package_weight_mode_change: function()
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightModeChange(
-            $('package_weight_custom_value_tr'), $('package_weight_custom_attribute_tr'),
-            $('package_weight_unit_of_measure_mode_tr'), $('package_weight_unit_of_measure_mode'),
+        self.weightModeChange.call(
+            this,
+            $('package_weight_custom_value_tr'),
+            $('package_weight_custom_attribute'),
+            $('package_weight_unit_of_measure_mode_tr'),
+            $('package_weight_unit_of_measure_mode'),
             this.value
         );
     },
@@ -187,8 +254,10 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightUnitOfMeasureChange(
-            $('package_weight_unit_of_measure_custom_value_tr'), $('package_weight_unit_of_measure_custom_attribute_tr'),
+        self.weightUnitOfMeasureChangeAll.call(
+            this,
+            $('package_weight_unit_of_measure_custom_value'),
+            $('package_weight_unit_of_measure_custom_attribute'),
             this.value
         );
     },
@@ -197,9 +266,12 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightModeChange(
-            $('shipping_weight_custom_value_tr'), $('shipping_weight_custom_attribute_tr'),
-            $('shipping_weight_unit_of_measure_mode_tr'), $('shipping_weight_unit_of_measure_mode'),
+        self.weightModeChange.call(
+            this,
+            $('shipping_weight_custom_value_tr'),
+            $('shipping_weight_custom_attribute'),
+            $('shipping_weight_unit_of_measure_mode_tr'),
+            $('shipping_weight_unit_of_measure_mode'),
             this.value
         );
     },
@@ -208,13 +280,15 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
     {
         var self = AmazonTemplateDescriptionDefinitionHandlerObj;
 
-        self.weightUnitOfMeasureChange(
-            $('shipping_weight_unit_of_measure_custom_value_tr'), $('shipping_weight_unit_of_measure_custom_attribute_tr'),
+        self.weightUnitOfMeasureChangeAll.call(
+            this,
+            $('shipping_weight_unit_of_measure_custom_value'),
+            $('shipping_weight_unit_of_measure_custom_attribute'),
             this.value
         );
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     multi_element_mode_change: function(type, max)
     {
@@ -289,24 +363,36 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
             $('gallery_images_mode_tr').show();
         }
 
-        $('image_main_attribute_tr')[this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::IMAGE_MAIN_MODE_ATTRIBUTE') ? 'show' : 'hide']();
+        $('image_main_attribute').value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::IMAGE_MAIN_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, $('image_main_attribute'));
+        }
+    },
+
+    image_variation_difference_mode_change: function()
+    {
+        var self = AmazonTemplateDescriptionDefinitionHandlerObj;
+
+        $('image_variation_difference_attribute').value = '';
+        if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::IMAGE_VARIATION_DIFFERENCE_MODE_ATTRIBUTE')) {
+            self.updateHiddenValue(this, $('image_variation_difference_attribute'));
+        }
     },
 
     gallery_images_mode_change: function()
     {
-        $('gallery_images_limit_tr').hide();
-        $('gallery_images_attribute_tr').hide();
-
+        $('gallery_images_limit').value = '';
+        $('gallery_images_attribute').value = '';
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::GALLERY_IMAGES_MODE_PRODUCT')) {
-            $('gallery_images_limit_tr').show();
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, $('gallery_images_limit'));
         }
 
         if (this.value == M2ePro.php.constant('Ess_M2ePro_Model_Amazon_Template_Description_Definition::GALLERY_IMAGES_MODE_ATTRIBUTE')) {
-            $('gallery_images_attribute_tr').show();
+            AmazonTemplateDescriptionDefinitionHandlerObj.updateHiddenValue(this, $('gallery_images_attribute'));
         }
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     showElement: function(type)
     {
@@ -368,7 +454,7 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
 
     forceFillUpElement: function(type, value)
     {
-        // -- check if already rendered. render if need.
+        // check if already rendered. render if need.
         var neededTr = null;
         $$('.' + type + '_tr').each(function(obj) {
             if ($(obj).visible() && $(obj).select('input[name="definition[' + type + '][]"]')[0].value == value) {
@@ -387,9 +473,9 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
 
             neededTr = emptyVisibleTrs.pop();
         }
-        // --
+        // ---------------------------------------
 
-        // --
+        // ---------------------------------------
         var input = neededTr.down('input[type="text"]');
 
         input.setAttribute('disabled', 'disabled');
@@ -403,7 +489,7 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
 
         neededTr.setAttribute('undeletable', '1');
         neededTr.down('td.attributes-container-td').hide();
-        // --
+        // ---------------------------------------
 
         $('hide_' + type + '_action').addClassName('action-disabled');
         this.multi_element_keyup(type, {value:' '});
@@ -432,5 +518,5 @@ CommonAmazonTemplateDescriptionDefinitionHandler.prototype = Object.extend(new C
         $('hide_' + type + '_action').removeClassName('action-disabled');
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

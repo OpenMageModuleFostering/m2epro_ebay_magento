@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_SupportController
     extends Ess_M2ePro_Controller_Adminhtml_BaseController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -22,6 +24,12 @@ class Ess_M2ePro_Adminhtml_SupportController
             ->addCss('M2ePro/css/Plugin/DropDown.css');
 
         return $this;
+    }
+
+    protected function _isAllowed()
+    {
+        return Mage::getSingleton('admin/session')->isAllowed('m2epro_ebay/help') ||
+               Mage::getSingleton('admin/session')->isAllowed('m2epro_common/help');
     }
 
     public function loadLayout($ids=null, $generateBlocks=true, $generateXml=true)
@@ -41,16 +49,31 @@ class Ess_M2ePro_Adminhtml_SupportController
         return $tempResult;
     }
 
-    //#############################################
+    //########################################
 
     public function indexAction()
     {
-        $this->_initAction()
-             ->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_support'))
+        $this->_initAction();
+
+        $referrer = $this->getRequest()->getParam('referrer');
+
+        if ($referrer == Ess_M2ePro_Helper_Component_Ebay::NICK) {
+
+            $this->setPageHelpLink(Ess_M2ePro_Helper_View_Ebay::NICK);
+
+        } elseif ($referrer == Ess_M2ePro_Helper_View_Common::NICK) {
+
+            $components = Mage::helper('M2ePro/View_Common_Component')->getActiveComponents();
+            if (count($components) == 1) {
+                $this->setPageHelpLink(array_shift($components));
+            }
+        }
+
+        $this->_addContent($this->getLayout()->createBlock('M2ePro/adminhtml_support'))
              ->renderLayout();
     }
 
-    //#############################################
+    //########################################
 
     public function getResultsHtmlAction()
     {
@@ -65,16 +88,27 @@ class Ess_M2ePro_Adminhtml_SupportController
         $this->getResponse()->setBody($blockHtml);
     }
 
-    //--------------------------------------------
+    // ---------------------------------------
 
     public function documentationAction()
     {
         $referrer = $this->getRequest()->getParam('referrer');
 
-        $url = Mage::helper('M2ePro/View_Ebay')->getDocumentationUrl();
+        $url = Mage::helper('M2ePro/Module_Support')->getDocumentationUrl();
 
-        if (isset($referrer) && $referrer == Ess_M2ePro_Helper_View_Common::NICK) {
-            $url = Mage::helper('M2ePro/View_Common')->getDocumentationUrl();
+        if ($referrer == Ess_M2ePro_Helper_View_Ebay::NICK) {
+
+            $url = Mage::helper('M2ePro/Module_Support')->getDocumentationUrl(
+                Ess_M2ePro_Helper_Component_Ebay::NICK
+            );
+
+        } elseif ($referrer == Ess_M2ePro_Helper_View_Common::NICK) {
+
+            $activeComponents = Mage::helper('M2ePro/View_Common_Component')->getActiveComponents();
+
+            if (count($activeComponents) == 1) {
+                $url = Mage::helper('M2ePro/Module_Support')->getDocumentationUrl(array_shift($activeComponents));
+            }
         }
 
         $html = '<iframe src="' .$url . '" width="100%" height="650"></iframe>';
@@ -94,7 +128,7 @@ class Ess_M2ePro_Adminhtml_SupportController
         $this->getResponse()->setBody($html);
     }
 
-    //#############################################
+    //########################################
 
     public function saveAction()
     {
@@ -135,7 +169,7 @@ class Ess_M2ePro_Adminhtml_SupportController
         $this->_redirect('*/*/index');
     }
 
-    //#############################################
+    //########################################
 
     public function migrationNotesAction()
     {
@@ -144,5 +178,5 @@ class Ess_M2ePro_Adminhtml_SupportController
              ->renderLayout();
     }
 
-    //#############################################
+    //########################################
 }

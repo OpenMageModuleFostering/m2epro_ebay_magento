@@ -1,14 +1,19 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
     extends Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Request
 {
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getActionData()
     {
         $data = array_merge(
@@ -18,7 +23,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
             $this->getRequestVariations()->getData()
         );
 
-        if ($this->getConfigurator()->isGeneral()) {
+        if ($this->getConfigurator()->isGeneralAllowed()) {
 
             $data['sku'] = $this->getEbayListingProduct()->getSku();
 
@@ -41,6 +46,10 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         );
     }
 
+    /**
+     * @param array $data
+     * @return array
+     */
     protected function prepareFinalData(array $data)
     {
         $data = $this->processingReplacedAction($data);
@@ -53,11 +62,11 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         return parent::prepareFinalData($data);
     }
 
-    // ########################################
+    //########################################
 
     private function processingReplacedAction($data)
     {
-        $params = $this->getParams();
+        $params = $this->getConfigurator()->getParams();
 
         if (!isset($params['replaced_action'])) {
             return $data;
@@ -121,7 +130,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         return $data;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     private function insertHasSaleFlagToVariations(array $data)
     {
@@ -196,11 +205,11 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         if (!empty($warningMessageReasons)) {
 
             // M2ePro_TRANSLATIONS
-            // %field_title% field(s) were ignored because eBay doesn't allow revise the Item if it has sales, bids for auction type or less than 12 hours remain before the Item end.
+            // %field_title% field(s) were ignored because eBay doesn't allow Revise the Item if it has sales, bids for Auction Type or less than 12 hours remain before the Item end.
             $this->addWarningMessage(
                 Mage::helper('M2ePro')->__(
-                    '%field_title% field(s) were ignored because eBay doesn\'t allow revise the Item if it has sales, '.
-                    'bids for auction type or less than 12 hours remain before the Item end.',
+                    '%field_title% field(s) were ignored because eBay doesn\'t allow Revise the Item if it has sales, '.
+                    'bids for Auction Type or less than 12 hours remain before the Item end.',
                     implode(', ', $warningMessageReasons)
                 )
             );
@@ -214,11 +223,11 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         if (isset($data['bestoffer_mode']) && $data['bestoffer_mode']) {
 
             // M2ePro_TRANSLATIONS
-            // Duration field(s) was ignored because eBay doesn't allow revise the Item if Best Offer is enabled.
+            // Duration field(s) was ignored because eBay doesn't allow Revise the Item if Best Offer is enabled.
             $this->addWarningMessage(
                 Mage::helper('M2ePro')->__(
                     'Duration field(s) was ignored because '.
-                    'eBay doesn\'t allow revise the Item if Best Offer is enabled.'
+                    'eBay doesn\'t allow Revise the Item if Best Offer is enabled.'
                 )
             );
             unset($data['duration']);
@@ -227,5 +236,5 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Action_Type_Revise_Request
         return $data;
     }
 
-    // ########################################
+    //########################################
 }

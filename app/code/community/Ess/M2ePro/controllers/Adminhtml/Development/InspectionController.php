@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Development_InspectionController
     extends Ess_M2ePro_Controller_Adminhtml_Development_CommandController
 {
-    //#############################################
+    //########################################
 
     public function phpInfoAction()
     {
@@ -23,10 +25,26 @@ class Ess_M2ePro_Adminhtml_Development_InspectionController
     {
         $resourcesConfig = Mage::getConfig()->getNode('global/resources');
         $resourcesConfig = json_decode(json_encode((array)$resourcesConfig), true);
+
+        $secureKeys = array('host', 'username', 'password');
+        foreach ($resourcesConfig as &$configItem) {
+            if (!isset($configItem['connection']) || !is_array($configItem['connection'])) {
+                continue;
+            }
+
+            foreach ($secureKeys as $key) {
+                if (!isset($configItem['connection'][$key])) {
+                    continue;
+                }
+
+                $configItem['connection'][$key] = str_repeat('*', strlen($configItem['connection'][$key]));
+            }
+        }
+
         echo '<pre>'.print_r($resourcesConfig, true).'</pre>';
     }
 
-    //#############################################
+    //########################################
 
     public function cronScheduleTableAction()
     {
@@ -53,7 +71,7 @@ class Ess_M2ePro_Adminhtml_Development_InspectionController
         return $this->getResponse()->setBody(Mage::getModel('cron/schedule')->load($id)->getMessages());
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     public function repairCrashedTableAction()
     {
@@ -69,5 +87,5 @@ class Ess_M2ePro_Adminhtml_Development_InspectionController
         return $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageInspectionTabUrl());
     }
 
-    //#############################################
+    //########################################
 }

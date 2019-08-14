@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_Sku_General
@@ -9,17 +11,20 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_Sku_Genera
 {
     const SKU_MAX_LENGTH = 30;
 
-    // ########################################
+    //########################################
 
-    public function isValid()
+    /**
+     * @return bool
+     */
+    public function validate()
     {
         $sku = $this->getSku();
 
         if (empty($sku)) {
 
             // M2ePro_TRANSLATIONS
-            // SKU is not provided. Please, check Listing settings.
-            $this->addMessage('SKU is not provided. Please, check Listing settings.');
+            // SKU is not provided. Please, check Listing Settings.
+            $this->addMessage('SKU is not provided. Please, check Listing Settings.');
 
             return false;
         }
@@ -27,8 +32,8 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_Sku_Genera
         if (strlen($sku) > self::SKU_MAX_LENGTH) {
 
             // M2ePro_TRANSLATIONS
-            // The length of sku must be less than 40 characters.
-            $this->addMessage('The length of sku must be less than 30 characters.');
+            // The length of Reference ID must be less than 30 characters.
+            $this->addMessage('The length of Reference ID must be less than 30 characters.');
 
             return false;
         }
@@ -38,7 +43,7 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_Sku_Genera
         return true;
     }
 
-    // ########################################
+    //########################################
 
     private function getSku()
     {
@@ -63,5 +68,5 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_List_Validator_Sku_Genera
         return $this->getBuyListingProduct()->getListingSource()->getSku();
     }
 
-    // ########################################
+    //########################################
 }

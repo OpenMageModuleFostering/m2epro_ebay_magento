@@ -1,7 +1,7 @@
-EditListingTitle = Class.create();
-EditListingTitle.prototype = {
+ListingEditListingTitle = Class.create();
+ListingEditListingTitle.prototype = {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function(gridId) {
         this.gridId = gridId;
@@ -85,5 +85,5 @@ EditListingTitle.prototype = {
         });
     }
 
-    //----------------------------------
+    // ---------------------------------------
 };

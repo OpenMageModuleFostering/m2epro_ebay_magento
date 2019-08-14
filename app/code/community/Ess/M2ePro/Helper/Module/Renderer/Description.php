@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abstract
@@ -15,18 +17,23 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
     const LAYOUT_MODE_ROW    = 'row';
     const LAYOUT_MODE_COLUMN = 'column';
 
-    // ########################################
+    //########################################
 
     public function parseTemplate($text, Ess_M2ePro_Model_Magento_Product $magentoProduct)
     {
-        $text = $this->insertAttributes($text, $magentoProduct);
-        $text = $this->insertImages($text, $magentoProduct);
-        $text = $this->insertMediaGalleries($text, $magentoProduct);
-
         $design = Mage::getDesign();
 
         $oldArea = $design->getArea();
+        $oldStore = Mage::app()->getStore();
+        $oldPackageName = $design->getPackageName();
+
         $design->setArea('adminhtml');
+        Mage::app()->setCurrentStore(Mage::app()->getStore($magentoProduct->getStoreId()));
+        $design->setPackageName(Mage::getStoreConfig('design/package/name', Mage::app()->getStore()->getId()));
+
+        $text = $this->insertAttributes($text, $magentoProduct);
+        $text = $this->insertImages($text, $magentoProduct);
+        $text = $this->insertMediaGalleries($text, $magentoProduct);
 
         //  the CMS static block replacement i.e. {{media url=’image.jpg’}}
         $filter = new Mage_Core_Model_Email_Template_Filter();
@@ -35,11 +42,13 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
         $text = $filter->filter($text);
 
         $design->setArea($oldArea);
+        Mage::app()->setCurrentStore($oldStore);
+        $design->setPackageName($oldPackageName);
 
         return $text;
     }
 
-    // ########################################
+    //########################################
 
     private function insertAttributes($text, Ess_M2ePro_Model_Magento_Product $magentoProduct)
     {
@@ -89,12 +98,9 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
 
         $imageLink = $magentoProduct->getImageLink('image');
 
-        $blockObj = Mage::getSingleton('core/layout')->createBlock(
-            'M2ePro/adminhtml_renderer_description_image'
-        );
-
         $search = array();
         $replace = array();
+
         foreach ($matches[0] as $key => $match) {
 
             $tempImageAttributes = explode(',', $matches[1][$key]);
@@ -111,13 +117,18 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
                 ? $imageLink
                 : $magentoProduct->getGalleryImageLink($realImageAttributes[5]);
 
+            $blockObj = Mage::getSingleton('core/layout')->createBlock(
+                'M2ePro/adminhtml_renderer_description_image'
+            );
+
             $data = array(
-                'width'       => $realImageAttributes[0],
-                'height'      => $realImageAttributes[1],
-                'margin'      => $realImageAttributes[2],
-                'linked_mode' => $realImageAttributes[3],
-                'watermark'   => $realImageAttributes[4],
-                'src'         => $tempImageLink
+                'width'        => $realImageAttributes[0],
+                'height'       => $realImageAttributes[1],
+                'margin'       => $realImageAttributes[2],
+                'linked_mode'  => $realImageAttributes[3],
+                'watermark'    => $realImageAttributes[4],
+                'src'          => $tempImageLink,
+                'index_number' => $key
             );
             $search[] = $match;
             $replace[] = ($tempImageLink == '')
@@ -138,13 +149,9 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
             return $text;
         }
 
-        $blockObj = Mage::getSingleton('core/layout')->createBlock(
-            'M2ePro/adminhtml_renderer_description_gallery'
-        );
-
         $search = array();
         $replace = array();
-        $attributeCounter = 0;
+
         foreach ($matches[0] as $key => $match) {
             $tempMediaGalleryAttributes = explode(',', $matches[1][$key]);
             $realMediaGalleryAttributes = array();
@@ -179,20 +186,16 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
                 'linked_mode'  => (int)$realMediaGalleryAttributes[3],
                 'layout'       => $realMediaGalleryAttributes[4],
                 'gallery_hint' => trim($realMediaGalleryAttributes[6], '"'),
-                'watermark' => (int)$realMediaGalleryAttributes[7],
-                'images_count' => count($galleryImagesLinks),
-                'image_counter' => 0
+                'watermark'    => (int)$realMediaGalleryAttributes[7],
+                'images'       => $galleryImagesLinks,
+                'index_number' => $key
             );
 
-            $tempHtml = '';
-            $attributeCounter++;
+            $blockObj = Mage::getSingleton('core/layout')->createBlock(
+                'M2ePro/adminhtml_renderer_description_gallery'
+            );
+            $tempHtml = $blockObj->setData($data)->toHtml();
 
-            foreach ($galleryImagesLinks as $imageLink) {
-                $data['image_counter']++;
-                $data['attribute_counter'] = $attributeCounter;
-                $data['src'] = $imageLink;
-                $tempHtml .= $blockObj->addData($data)->toHtml();
-            }
             $search[] = $match;
             $replace[] = preg_replace('/\s{2,}/', '', $tempHtml);
         }
@@ -202,7 +205,7 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
         return $text;
     }
 
-    //----------------------------------------
+    // ---------------------------------------
 
     private function normalizeDescription($str)
     {
@@ -249,5 +252,5 @@ class Ess_M2ePro_Helper_Module_Renderer_Description extends Mage_Core_Helper_Abs
         return $str;
     }
 
-    // ########################################
+    //########################################
 }

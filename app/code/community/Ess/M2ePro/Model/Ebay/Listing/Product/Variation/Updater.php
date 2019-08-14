@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
@@ -9,8 +11,11 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
 {
     const VALIDATE_MESSAGE_DATA_KEY = '_validate_limits_conditions_message_';
 
-    // ########################################
+    //########################################
 
+    /**
+     * @param Ess_M2ePro_Model_Listing_Product $listingProduct
+     */
     public function process(Ess_M2ePro_Model_Listing_Product $listingProduct)
     {
         if (!$listingProduct->getMagentoProduct()->isProductWithVariations()) {
@@ -27,6 +32,11 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         $rawMagentoVariations = $this->validateLimitsConditions($rawMagentoVariations,$listingProduct);
 
         $magentoVariations = $this->prepareMagentoVariations($rawMagentoVariations);
+
+        if (!$listingProduct->getMagentoProduct()->isSimpleType()) {
+            $this->inspectAndFixProductOptionsIds($listingProduct, $magentoVariations);
+        }
+
         $currentVariations = $this->prepareCurrentVariations($listingProduct->getVariations(true));
 
         $addedVariations = $this->getAddedVariations($magentoVariations,$currentVariations);
@@ -35,10 +45,10 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         $this->addNewVariations($listingProduct,$addedVariations);
         $this->markAsDeletedVariations($deletedVariations);
 
-        $this->saveVariationsSets($listingProduct,$rawMagentoVariations);
+        $this->saveVariationsData($listingProduct,$rawMagentoVariations);
     }
 
-    // ########################################
+    //########################################
 
     protected function validateExistenceConditions($sourceVariations,
                                                    Ess_M2ePro_Model_Listing_Product $listingProduct)
@@ -49,7 +59,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
 
             $listingProduct->setData(
                 self::VALIDATE_MESSAGE_DATA_KEY,
-                'The Product was listed as a Simple Product because M2E Pro
+                'The Product was Listed as a Simple Product because M2E Pro
                  cannot retrieve Magento variations from this Product.'
             );
 
@@ -71,8 +81,8 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
             // Color: Blue, Size: XL, ...
 
             $listingProduct->setData(self::VALIDATE_MESSAGE_DATA_KEY,
-            'The Product was listed as a Simple Product as it has limitation for multi-variation Items. '.
-            'Reason: number of options more than 5.'
+            'The Product was Listed as a Simple Product as it has limitation for Multi-Variation Items. '.
+            'Reason: number of Options more than 5.'
             );
 
             return array(
@@ -90,8 +100,8 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
 
                 $listingProduct->setData(
                     self::VALIDATE_MESSAGE_DATA_KEY,
-                    'The Product was listed as a Simple Product as it has limitation for multi-variation Items. '.
-                    'Reason: number of values for each option more than 60.'
+                    'The Product was Listed as a Simple Product as it has limitation for Multi-Variation Items. '.
+                    'Reason: number of values for each Option more than 60.'
                 );
 
                 return array(
@@ -106,7 +116,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
             // Not more that 250 possible variations
 
             $listingProduct->setData(self::VALIDATE_MESSAGE_DATA_KEY,
-            'The Product was listed as a Simple Product as it has limitation for multi-variation Items. '.
+            'The Product was Listed as a Simple Product as it has limitation for Multi-Variation Items. '.
             'Reason: sum of quantities of all possible Products options more than 250.'
             );
 
@@ -119,24 +129,69 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         return $sourceVariations;
     }
 
-    protected function saveVariationsSets(Ess_M2ePro_Model_Listing_Product $listingProduct,$variations)
+    protected function saveVariationsData(Ess_M2ePro_Model_Listing_Product $listingProduct, $variationsData)
     {
-        if (!isset($variations['set'])) {
-            return;
+        $additionalData = $listingProduct->getData('additional_data');
+        $additionalData = is_null($additionalData) ? array()
+                                                   : (array)json_decode($additionalData,true);
+
+        if (isset($variationsData['set'])) {
+            $additionalData['variations_sets'] = $variationsData['set'];
         }
 
-        $additionalData = $listingProduct->getData('additional_data');
-        $additionalData = is_null($additionalData)
-                          ? array()
-                          : json_decode($additionalData,true);
-
-        $additionalData['variations_sets'] = $variations['set'];
+        if (isset($variationsData['additional']['attributes'])) {
+            $additionalData['configurable_attributes'] = $variationsData['additional']['attributes'];
+        }
 
         $listingProduct->setData('additional_data',json_encode($additionalData))
                        ->save();
     }
 
-    // ########################################
+    //########################################
+
+    private function inspectAndFixProductOptionsIds(Ess_M2ePro_Model_Listing_Product $listingProduct,
+                                                    $magentoVariations)
+    {
+        /** @var Ess_M2ePro_Model_Listing_Product_Variation[] $listingProductVariations */
+        $listingProductVariations = $listingProduct->getVariations(true);
+
+        if (empty($listingProductVariations)) {
+            return;
+        }
+
+        foreach ($listingProductVariations as $listingProductVariation) {
+
+            $listingProductVariationOptions = $listingProductVariation->getOptions();
+
+            foreach ($magentoVariations as $magentoVariation) {
+
+                $magentoVariationOptions = $magentoVariation['options'];
+
+                if (!$this->isEqualVariations($magentoVariationOptions, $listingProductVariationOptions)) {
+                    continue;
+                }
+
+                foreach ($listingProductVariationOptions as $listingProductVariationOption) {
+                    foreach ($magentoVariationOptions as $magentoVariationOption) {
+
+                        if ($listingProductVariationOption['attribute'] != $magentoVariationOption['attribute'] ||
+                            $listingProductVariationOption['option'] != $magentoVariationOption['option']) {
+                            continue;
+                        }
+
+                        if ($listingProductVariationOption['product_id'] == $magentoVariationOption['product_id']) {
+                            continue;
+                        }
+
+                        $listingProductVariationOption['product_id'] = $magentoVariationOption['product_id'];
+
+                        Mage::helper('M2ePro/Component_Ebay')->getModel('Listing_Product_Variation_Option')
+                            ->setData($listingProductVariationOption)->save();
+                    }
+                }
+            }
+        }
+    }
 
     private function getAddedVariations($magentoVariations, $currentVariations)
     {
@@ -194,7 +249,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         return $result;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     private function addNewVariations(Ess_M2ePro_Model_Listing_Product $listingProduct, $addedVariations)
     {
@@ -272,7 +327,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         }
     }
 
-    // ########################################
+    //########################################
 
     private function prepareMagentoVariations($variations)
     {
@@ -315,7 +370,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         return $result;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     private function isEqualVariations($magentoVariation, $currentVariation)
     {
@@ -343,5 +398,5 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Variation_Updater
         return true;
     }
 
-    // ########################################
+    //########################################
 }

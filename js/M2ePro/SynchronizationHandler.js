@@ -1,7 +1,7 @@
 SynchronizationHandler = Class.create();
 SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
 
-    //----------------------------------
+    // ---------------------------------------
 
     initialize: function(synchProgressObj)
     {
@@ -9,7 +9,7 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
         this.synchProgressObj.addProcessingNowWarning();
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     completeStep: function()
     {
@@ -36,7 +36,7 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
             parameters: {components: components},
             asynchronous: true,
             onSuccess: function(transport) {
-                MagentoMessageObj.addSuccess(M2ePro.translator.translate('Synchronization settings have been saved.'));
+                MagentoMessageObj.addSuccess(M2ePro.translator.translate('Synchronization Settings have been saved.'));
                 if (runSynch != '') {
                     eval('self.'+runSynch+'(components);');
                 }
@@ -44,7 +44,7 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
         });
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     runAllEnabledNow: function(components)
     {
@@ -55,103 +55,7 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
         );
     },
 
-    //----------------------------------
-
-    runNowTemplates: function(components)
-    {
-        this.synchProgressObj.runTask(
-            M2ePro.translator.translate('Inventory Synchronization'),
-            M2ePro.url.get('runNowTemplates'),
-            components
-        );
-    },
-
-    runNowOrders: function(components)
-    {
-        this.synchProgressObj.runTask(
-            M2ePro.translator.translate('Orders Synchronization'),
-            M2ePro.url.get('runNowOrders'),
-            components
-        );
-    },
-
-    runNowFeedbacks: function(components)
-    {
-        this.synchProgressObj.runTask(
-            M2ePro.translator.translate('Feedback Synchronization'),
-            M2ePro.url.get('runNowFeedbacks'),
-            components
-        );
-    },
-
-    runNowOtherListings: function(components)
-    {
-        this.synchProgressObj.runTask(
-            M2ePro.translator.translate('3rd Party Listings Synchronization'),
-            M2ePro.url.get('runNowOtherListings'),
-            components
-        );
-    },
-
-    //----------------------------------
-
-    changeTemplatesMode: function(component)
-    {
-        var value = $(component + '_templates_mode').value;
-
-        var reviseAllNotification = $('block_notice_'+component+'_synchronization_revise_all');
-
-        if (value == '1') {
-            $(component + '_templates_run_now_container').show();
-            reviseAllNotification && reviseAllNotification.show();
-        } else {
-            $(component + '_templates_run_now_container').hide();
-            reviseAllNotification && reviseAllNotification.hide();
-        }
-    },
-
-    changeOrdersMode: function(component)
-    {
-        var value = $(component + '_orders_mode').value;
-
-        if (value == '1') {
-            $(component + '_orders_run_now_container').show();
-        } else {
-            $(component + '_orders_run_now_container').hide();
-        }
-    },
-
-    changeFeedbacksMode: function(component)
-    {
-        var value = $(component + '_feedbacks_mode').value;
-
-        if (value == '1') {
-            $(component + '_feedbacks_run_now_container').show();
-        } else {
-            $(component + '_feedbacks_run_now_container').hide();
-        }
-    },
-
-    changeOtherListingsMode: function(component)
-    {
-        var value = $(component + '_other_listings_mode').value;
-
-        if (value == '1') {
-            $(component + '_other_listings_run_now_container').show();
-
-            if (component == 'ebay') {
-                $('ebay_other_listings_synchronization_settings_button_container').show();
-            }
-        } else {
-            $(component + '_other_listings_run_now_container').hide();
-
-            if (component == 'ebay') {
-                $(component + '_other_listings_synchronization_settings_button_container').hide();
-            }
-        }
-    },
-
-    //----------------------------------
+    // ---------------------------------------
 
     moveChildBlockContent: function(childBlockId, destinationBlockId)
     {
@@ -162,7 +66,7 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
         $(destinationBlockId).appendChild($(childBlockId));
     },
 
-    //----------------------------------
+    // ---------------------------------------
 
     showReviseAllConfirmPopup: function(component)
     {
@@ -213,5 +117,5 @@ SynchronizationHandler.prototype = Object.extend(new CommonHandler(), {
         }
     }
 
-    //----------------------------------
+    // ---------------------------------------
 });

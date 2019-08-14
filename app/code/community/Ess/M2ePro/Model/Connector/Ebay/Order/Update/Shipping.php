@@ -1,23 +1,23 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
     extends Ess_M2ePro_Model_Connector_Ebay_Order_Update_Abstract
 {
     // M2ePro_TRANSLATIONS
-    // Shipping status for eBay order was not updated. Reason: eBay Failure.
+    // Shipping Status for eBay Order was not updated. Reason: eBay Failure.
     // Tracking number "%num%" for "%code%" has been sent to eBay.
-    // Shipping status for eBay order was updated to Shipped.
-
-    // ########################################
+    // Shipping Status for eBay Order was updated to Shipped.
 
     private $carrierCode = NULL;
     private $trackingNumber = NULL;
 
-    // ########################################
+    //########################################
 
     public function __construct(array $params = array(), Ess_M2ePro_Model_Order $order, $action)
     {
@@ -29,7 +29,7 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
         }
     }
 
-    // ########################################
+    //########################################
 
     protected function isNeedSendRequest()
     {
@@ -40,7 +40,7 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
         return parent::isNeedSendRequest();
     }
 
-    // ########################################
+    //########################################
 
     protected function getRequestData()
     {
@@ -54,7 +54,7 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
         return $requestData;
     }
 
-    // ########################################
+    //########################################
 
     protected function prepareResponseData($response)
     {
@@ -64,7 +64,7 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
 
         if (!isset($response['result']) || !$response['result']) {
             $this->order->addErrorLog(
-                'Shipping status for eBay order was not updated. Reason: eBay Failure.'
+                'Shipping Status for eBay Order was not updated. Reason: eBay Failure.'
             );
 
             return false;
@@ -80,9 +80,8 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
         }
 
         if (!$this->order->getChildObject()->isShippingCompleted()) {
-//             $this->order->setData('shipping_status',Ess_M2ePro_Model_Ebay_Order::SHIPPING_STATUS_COMPLETED)->save();
             $this->order->addSuccessLog(
-                'Shipping status for eBay order was updated to Shipped.'
+                'Shipping Status for eBay Order was updated to Shipped.'
             );
         }
 
@@ -92,5 +91,5 @@ class Ess_M2ePro_Model_Connector_Ebay_Order_Update_Shipping
         return $response;
     }
 
-    // ########################################
+    //########################################
 }

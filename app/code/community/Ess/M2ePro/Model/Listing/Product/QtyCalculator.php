@@ -1,13 +1,13 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
 {
-    // ########################################
-
     /**
      * @var null|array
      */
@@ -23,7 +23,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
      */
     private $productValueCache = NULL;
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Listing_Product $product
@@ -37,18 +37,18 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
 
     /**
      * @return Ess_M2ePro_Model_Listing_Product
-     * @throws LogicException
+     * @throws Ess_M2ePro_Model_Exception_Logic
      */
     protected function getProduct()
     {
         if (is_null($this->product)) {
-            throw new LogicException('Initialize all parameters first.');
+            throw new Ess_M2ePro_Model_Exception_Logic('Initialize all parameters first.');
         }
 
         return $this->product;
     }
 
-    // ########################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Listing
@@ -66,7 +66,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return $this->getListing()->getChildObject();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     /**
      * @return Ess_M2ePro_Model_Template_SellingFormat
@@ -84,7 +84,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return $this->getSellingFormatTemplate()->getChildObject();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     /**
      * @param null|string $key
@@ -116,7 +116,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return $this->getProduct()->getMagentoProduct();
     }
 
-    // ########################################
+    //########################################
 
     public function getProductValue()
     {
@@ -147,7 +147,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
                 break;
 
             default:
-                throw new LogicException('Unknown mode in database.');
+                throw new Ess_M2ePro_Model_Exception_Logic('Unknown Mode in Database.');
         }
 
         $value = $this->applySellingFormatTemplateModifications($value);
@@ -172,7 +172,10 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
 
             // grouping qty by product id
             foreach ($variation->getOptions(true) as $option) {
-                /** @var $option Ess_M2ePro_Model_Listing_Product_Variation_Option */
+                if (!$option->getProductId()) {
+                   continue;
+                }
+
                 $optionsQtyArray[$option->getProductId()][] = $this->getOptionBaseValue($option);
             }
 
@@ -183,7 +186,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
             $value = min($optionsQtyList);
 
         } else {
-            throw new LogicException('Unknown Product type.');
+            throw new Ess_M2ePro_Model_Exception_Logic('Unknown Product type.');
         }
 
         $value = $this->applySellingFormatTemplateModifications($value);
@@ -192,7 +195,7 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return (int)floor($value);
     }
 
-    // ########################################
+    //########################################
 
     protected function getOptionBaseValue(Ess_M2ePro_Model_Listing_Product_Variation_Option $option)
     {
@@ -218,13 +221,13 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
                 break;
 
             default:
-                throw new LogicException('Unknown mode in database.');
+                throw new Ess_M2ePro_Model_Exception_Logic('Unknown Mode in Database.');
         }
 
         return $value;
     }
 
-    // ########################################
+    //########################################
 
     protected function applySellingFormatTemplateModifications($value)
     {
@@ -242,13 +245,13 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return $value;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function applyValuePercentageModifications($value)
     {
         $percents = $this->getSource('qty_percentage');
 
-        if ($value <= 0 || $percents < 0 || $percents > 100) {
+        if ($value <= 0 || $percents < 0 || $percents == 100) {
             return $value;
         }
 
@@ -273,5 +276,5 @@ abstract class Ess_M2ePro_Model_Listing_Product_QtyCalculator
         return $value;
     }
 
-    // ########################################
+    //########################################
 }

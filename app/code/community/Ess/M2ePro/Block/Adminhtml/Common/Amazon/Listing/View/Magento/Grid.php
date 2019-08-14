@@ -1,14 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
     extends Ess_M2ePro_Block_Adminhtml_Magento_Product_Grid_Abstract
 {
-
-    // ####################################
+    //########################################
 
     public function __construct()
     {
@@ -17,16 +18,16 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         $listingData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('amazonListingViewMagentoGrid'.$listingData['id']);
-        //------------------------------
+        // ---------------------------------------
 
         $this->hideMassactionColumn = true;
         $this->hideMassactionDropDown = true;
         $this->showAdvancedFilterProductsOption = false;
     }
 
-    // ####################################
+    //########################################
 
     public function getMainButtonsHtml()
     {
@@ -41,15 +42,15 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         return $viewModeSwitcherBlock->toHtml() . parent::getMainButtonsHtml();
     }
 
-    // ####################################
+    //########################################
 
     protected function _prepareCollection()
     {
         $listingData = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         // Get collection
-        //----------------------------
-        /* @var $collection Mage_Core_Model_Mysql4_Collection_Abstract */
+        // ---------------------------------------
+        /* @var $collection Ess_M2ePro_Model_Mysql4_Magento_Product_Collection */
         $collection = Mage::getConfig()->getModelInstance('Ess_M2ePro_Model_Mysql4_Magento_Product_Collection',
             Mage::getModel('catalog/product')->getResource());
         $collection->getSelect()->group('e.entity_id');
@@ -64,7 +65,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
                 'left'
             );
 
-        //----------------------------
+        // ---------------------------------------
 
         $collection->joinTable(
             array('lp' => 'M2ePro/Listing_Product'),
@@ -92,15 +93,15 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
             NULL,
             'left'
         );
-        //----------------------------
+        // ---------------------------------------
 
         // Set filter store
-        //----------------------------
+        // ---------------------------------------
         $store = $this->_getStore();
 
         if ($store->getId()) {
             $collection->joinAttribute(
-                'price', 'catalog_product/price', 'entity_id', NULL, 'left', $store->getId()
+                'magento_price', 'catalog_product/price', 'entity_id', NULL, 'left', $store->getId()
             );
             $collection->joinAttribute(
                 'status', 'catalog_product/status', 'entity_id', NULL, 'inner',$store->getId()
@@ -117,9 +118,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
             $collection->addAttributeToSelect('visibility');
             $collection->addAttributeToSelect('thumbnail');
         }
-        //----------------------------
-
-//        exit($collection->getSelect()->__toString());
+        // ---------------------------------------
 
         // Set collection to grid
         $this->setCollection($collection);
@@ -146,7 +145,6 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         $this->addColumn('name', array(
             'header'    => Mage::helper('M2ePro')->__('Title'),
             'align'     => 'left',
-            //'width'     => '100px',
             'type'      => 'text',
             'index'     => 'name',
             'filter_index' => 'name',
@@ -193,14 +191,19 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
 
         $store = $this->_getStore();
 
-        $this->addColumn('price', array(
+        $priceAttributeAlias = 'price';
+        if ($store->getId()) {
+            $priceAttributeAlias = 'magento_price';
+        }
+
+        $this->addColumn($priceAttributeAlias, array(
             'header'    => Mage::helper('M2ePro')->__('Price'),
             'align'     => 'right',
             'width'     => '100px',
             'type'      => 'price',
             'currency_code' => $store->getBaseCurrency()->getCode(),
-            'index'     => 'price',
-            'filter_index' => 'price',
+            'index'     => $priceAttributeAlias,
+            'filter_index' => $priceAttributeAlias,
             'frame_callback' => array($this, 'callbackColumnPrice')
         ));
 
@@ -254,7 +257,28 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         return parent::_prepareColumns();
     }
 
-    // ####################################
+    //########################################
+
+    public function callbackColumnPrice($value, $row, $column, $isExport)
+    {
+        $rowVal = $row->getData();
+
+        if ($column->getId() == 'magento_price' &&
+            (!isset($rowVal['magento_price']) || (float)$rowVal['magento_price'] <= 0)
+        ) {
+            $value = '<span style="color: red;">0</span>';
+        }
+
+        if ($column->getId() == 'price' &&
+            (!isset($rowVal['price']) || (float)$rowVal['price'] <= 0)
+        ) {
+            $value = '<span style="color: red;">0</span>';
+        }
+
+        return $value;
+    }
+
+    //########################################
 
     public function getGridUrl()
     {
@@ -266,7 +290,7 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         return false;
     }
 
-    // ####################################
+    //########################################
 
     protected function _addColumnFilterToCollection($column)
     {
@@ -283,23 +307,23 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
         return parent::_addColumnFilterToCollection($column);
     }
 
-    // ####################################
+    //########################################
 
     protected function _getStore()
     {
         $listing = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         // Get store filter
-        //----------------------------
+        // ---------------------------------------
         $storeId = $listing['store_id'];
-        //----------------------------
+        // ---------------------------------------
 
         return Mage::app()->getStore((int)$storeId);
     }
 
     protected function _toHtml()
     {
-        $javascriptsMain = <<<JAVASCRIPT
+        $javascriptsMain = <<<HTML
 <script type="text/javascript">
 
     if (typeof ListingGridHandlerObj != 'undefined') {
@@ -313,12 +337,12 @@ class Ess_M2ePro_Block_Adminhtml_Common_Amazon_Listing_View_Magento_Grid
     });
 
 </script>
-JAVASCRIPT;
+HTML;
 
         return parent::_toHtml().$javascriptsMain;
     }
 
-    // ####################################
+    //########################################
 
     protected function isShowRuleBlock()
     {
@@ -331,6 +355,5 @@ JAVASCRIPT;
         return parent::isShowRuleBlock();
     }
 
-    // ####################################
-
+    //########################################
 }

@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Configuration_SettingsController
     extends Ess_M2ePro_Controller_Adminhtml_Configuration_MainController
 {
-    //#############################################
+    //########################################
 
     public function saveAction()
     {
@@ -36,13 +38,13 @@ class Ess_M2ePro_Adminhtml_Configuration_SettingsController
         );
 
         $this->_getSession()->addSuccess(
-            Mage::helper('M2ePro')->__('The global settings have been successfully saved.')
+            Mage::helper('M2ePro')->__('The global Settings have been successfully saved.')
         );
 
         $this->_redirectUrl($this->_getRefererUrl());
     }
 
-    //#############################################
+    //########################################
 
     public function restoreBlockNoticesAction()
     {
@@ -50,9 +52,9 @@ class Ess_M2ePro_Adminhtml_Configuration_SettingsController
             strpos($name,'m2e_bn_') !== false && setcookie($name, '', 0, '/');
         }
 
-        $this->_getSession()->addSuccess(Mage::helper('M2ePro')->__('All help blocks were restored.'));
+        $this->_getSession()->addSuccess(Mage::helper('M2ePro')->__('All Help Blocks were restored.'));
         $this->_redirectUrl($this->_getRefererUrl());
     }
 
-    //#############################################
+    //########################################
 }

@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
@@ -9,15 +11,19 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
     /* @var Ess_M2ePro_Model_Ebay_Listing_Product */
     protected $listingProduct = NULL;
 
-    // ########################################
+    //########################################
 
+    /**
+     * @param Ess_M2ePro_Model_Ebay_Listing_Product $listingProduct
+     * @return $this
+     */
     public function setListingProduct(Ess_M2ePro_Model_Ebay_Listing_Product $listingProduct)
     {
         $this->listingProduct = $listingProduct;
         return $this;
     }
 
-    // ########################################
+    //########################################
 
     public function parseTemplate($text)
     {
@@ -25,7 +31,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $text;
     }
 
-    // ########################################
+    //########################################
 
     protected function insertValues($text)
     {
@@ -53,17 +59,28 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $text;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return int
+     */
     protected function getQty()
     {
         return (int)$this->listingProduct->getQty();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
-    protected function getBuyItNowPrice()
+    /**
+     * @return string
+     * @throws Ess_M2ePro_Model_Exception_Logic
+     */
+    protected function getFixedPrice()
     {
+        if (!$this->listingProduct->isListingTypeFixed()) {
+            return 'N/A';
+        }
+
         if ($this->listingProduct->isVariationsReady()) {
 
             $pricesList = array();
@@ -76,7 +93,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
             $price = count($pricesList) > 0 ? min($pricesList) : 0;
 
         } else {
-            $price = $this->listingProduct->getBuyItNowPrice();
+            $price = $this->listingProduct->getFixedPrice();
         }
 
         if (empty($price)) {
@@ -88,6 +105,10 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
 
     protected function getStartPrice()
     {
+        if (!$this->listingProduct->isListingTypeAuction()) {
+            return 'N/A';
+        }
+
         $price = $this->listingProduct->getStartPrice();
 
         if (empty($price)) {
@@ -99,6 +120,10 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
 
     protected function getReservePrice()
     {
+        if (!$this->listingProduct->isListingTypeAuction()) {
+            return 'N/A';
+        }
+
         $price = $this->listingProduct->getReservePrice();
 
         if (empty($price)) {
@@ -108,7 +133,22 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return sprintf('%01.2f', $price);
     }
 
-    // ########################################
+    protected function getBuyItNowPrice()
+    {
+        if (!$this->listingProduct->isListingTypeAuction()) {
+            return 'N/A';
+        }
+
+        $price = $this->listingProduct->getBuyItNowPrice();
+
+        if (empty($price)) {
+            return 'N/A';
+        }
+
+        return sprintf('%01.2f', $price);
+    }
+
+    //########################################
 
     protected function getTitle()
     {
@@ -120,7 +160,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $this->listingProduct->getDescriptionTemplateSource()->getSubTitle();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function getListingType()
     {
@@ -172,7 +212,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $result;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function getCondition()
     {
@@ -217,7 +257,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $this->listingProduct->getDescriptionTemplateSource()->getConditionNote();
     }
 
-    // ########################################
+    //########################################
 
     protected function getPrimaryCategoryId()
     {
@@ -251,7 +291,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return $category ? $category : 'N/A';
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function getPrimaryCategoryName()
     {
@@ -297,7 +337,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return 'N/A';
     }
 
-    // ########################################
+    //########################################
 
     protected function getDomesticShippingMethod($i)
     {
@@ -314,12 +354,9 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         $coreResource = Mage::getSingleton('core/resource');
         $connRead = $coreResource->getConnection('core_read');
 
-        //------------------------------
         $tableDictShipping = $coreResource->getTableName('m2epro_ebay_dictionary_shipping');
-        //------------------------------
 
         // table m2epro_ebay_dictionary_marketplace
-        //------------------------------
         $dbSelect = $connRead
             ->select()
             ->from($tableDictShipping,'title')
@@ -369,7 +406,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return sprintf('%01.2f', $cost);
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     protected function getInternationalShippingMethod($i)
     {
@@ -386,12 +423,12 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         $coreResource = Mage::getSingleton('core/resource');
         $connRead = $coreResource->getConnection('core_read');
 
-        //------------------------------
+        // ---------------------------------------
         $tableDictShipping = $coreResource->getTableName('m2epro_ebay_dictionary_shipping');
-        //------------------------------
+        // ---------------------------------------
 
         // table m2epro_ebay_dictionary_marketplace
-        //------------------------------
+        // ---------------------------------------
         $dbSelect = $connRead
             ->select()
             ->from($tableDictShipping,'title')
@@ -441,5 +478,5 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_Description_Renderer
         return sprintf('%01.2f', $cost);
     }
 
-    // ########################################
+    //########################################
 }

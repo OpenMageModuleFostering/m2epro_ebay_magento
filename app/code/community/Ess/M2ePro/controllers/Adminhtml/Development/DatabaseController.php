@@ -1,13 +1,15 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Adminhtml_Development_DatabaseController
     extends Ess_M2ePro_Controller_Adminhtml_Development_MainController
 {
-    //#############################################
+    //########################################
 
     protected function _initAction()
     {
@@ -20,7 +22,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         return $this;
     }
 
-    //#############################################
+    //########################################
 
     public function manageTableAction()
     {
@@ -79,7 +81,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
             $this->afterTableAction($table);
         }
 
-        $this->_getSession()->addSuccess('Truncate tables was successfully completed.');
+        $this->_getSession()->addSuccess('Truncate Tables was successfully completed.');
 
         if (count($tables) == 1) {
             $this->redirectToTablePage($tables[0]);
@@ -87,7 +89,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         $this->_redirectUrl(Mage::helper('M2ePro/View_Development')->getPageDatabaseTabUrl());
     }
 
-    //---------------------------------------------
+    // ---------------------------------------
 
     public function addTableRowAction()
     {
@@ -110,7 +112,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         $ids = explode(',', $this->getRequest()->getParam('ids'));
 
         if (!$modelInstance || empty($ids)) {
-            $this->_getSession()->addError("Failed to get model or any of table rows are not selected.");
+            $this->_getSession()->addError("Failed to get model or any of Table Rows are not selected.");
             $this->redirectToTablePage($table);
         }
 
@@ -150,8 +152,30 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
             $this->redirectToTablePage($table);
         }
 
-        $collection->setDataToAll($cellsValues);
-        $collection->save();
+        $idFieldName = $modelInstance->getIdFieldName();
+        $isAutoIncrement = Mage::helper('M2ePro/Module_Database_Structure')->isIdColumnAutoIncrement($table);
+
+        foreach ($collection->getItems() as $item) {
+            foreach ($cellsValues as $field => $value) {
+
+                if ($field == $idFieldName && $isAutoIncrement) {
+                    continue;
+                }
+
+                if ($field == $idFieldName && !$isAutoIncrement) {
+
+                    Mage::getSingleton('core/resource')->getConnection('core_write')->update(
+                        Mage::getSingleton('core/resource')->getTableName($table),
+                        array($idFieldName => $value),
+                        "`{$idFieldName}` = {$item->getId()}"
+                    );
+                }
+
+                $item->setData($field, $value);
+            }
+
+            $item->save();
+        }
 
         $this->afterTableAction($table);
     }
@@ -163,7 +187,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         }
     }
 
-    //#############################################
+    //########################################
 
     private function getModel()
     {
@@ -203,7 +227,7 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         return $bindArray;
     }
 
-    //#############################################
+    //########################################
 
     public function databaseGridAction()
     {
@@ -232,12 +256,12 @@ class Ess_M2ePro_Adminhtml_Development_DatabaseController
         $this->getResponse()->setBody($response);
     }
 
-    //#############################################
+    //########################################
 
     public function redirectToTablePage($tableName)
     {
         $this->_redirect('*/*/manageTable', array('table' => $tableName));
     }
 
-    //#############################################
+    //########################################
 }

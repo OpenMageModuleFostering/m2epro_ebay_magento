@@ -1,32 +1,33 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent_Processor
 {
-    // ##########################################################
+    //########################################
 
     /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
     private $listingProduct = null;
 
     private $marketplaceId = null;
 
-    private $actualMagentoProductVariations = null;
-
     /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent $typeModel */
     private $typeModel = null;
-
-    private $childListingProducts = null;
 
     /** @var Ess_M2ePro_Model_Amazon_Template_Description $descriptionTemplate */
     private $descriptionTemplate = null;
 
     private $possibleThemes = null;
 
-    // ##########################################################
+    //########################################
 
+    /**
+     * @return Ess_M2ePro_Model_Listing_Product
+     */
     public function getListingProduct()
     {
         return $this->listingProduct;
@@ -40,34 +41,41 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
         return $this->getListingProduct()->getChildObject();
     }
 
+    /**
+     * @param $listingProduct
+     * @return $this
+     */
     public function setListingProduct($listingProduct)
     {
         $this->listingProduct = $listingProduct;
         return $this;
     }
 
-    // ##########################################################
+    //########################################
 
     public function process()
     {
         if (is_null($this->listingProduct)) {
-            throw new Exception('Listing Product was not set.');
+            throw new Ess_M2ePro_Model_Exception('Listing Product was not set.');
         }
 
-        $this->listingProduct->getMagentoProduct()->enableCache();
+        $this->getTypeModel()->enableCache();
 
         foreach ($this->getSortedProcessors() as $processor) {
             $this->getProcessorModel($processor)->process();
         }
 
+        $this->listingProduct->setData('variation_parent_need_processor', 0);
+
         $this->listingProduct->save();
     }
 
-    // ##########################################################
+    //########################################
 
     private function getSortedProcessors()
     {
         return array(
+            'Template',
             'GeneralIdOwner',
             'Attributes',
             'Theme',
@@ -79,39 +87,45 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
     }
 
     /**
-     * @return Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent_Processor_Abstract
+     * @param  string $processorName
+     * @return Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent_Processor_Sub_Abstract
      */
     private function getProcessorModel($processorName)
     {
         $model = Mage::getModel(
-            'M2ePro/Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent_Processor_'.$processorName
+            'M2ePro/Amazon_Listing_Product_Variation_Manager_Type_Relation_Parent_Processor_Sub_'.$processorName
         );
         $model->setProcessor($this);
 
         return $model;
     }
 
-    // ##########################################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function isGeneralIdSet()
     {
         return (bool)$this->getAmazonListingProduct()->getGeneralId();
     }
 
+    /**
+     * @return bool
+     */
     public function isGeneralIdOwner()
     {
         return $this->getAmazonListingProduct()->isGeneralIdOwner();
     }
 
-    // ##########################################################
+    //########################################
 
-    public function getActualMagentoProductVariations()
+    /**
+     * @return array
+     */
+    public function getMagentoProductVariations()
     {
-        if (!is_null($this->actualMagentoProductVariations)) {
-            return $this->actualMagentoProductVariations;
-        }
-
-        return $this->actualMagentoProductVariations = $this->getListingProduct()
+        return $this->getListingProduct()
             ->getMagentoProduct()
             ->getVariationInstance()
             ->getVariationsTypeStandard();
@@ -139,60 +153,13 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
             ->getTypeModel();
     }
 
-    // ##########################################################
+    //########################################
 
     /**
-     * @return Ess_M2ePro_Model_Listing_Product[]
+     * @param Ess_M2ePro_Model_Listing_Product $childListingProduct
+     * @return bool
      */
-    public function getChildListingProducts()
-    {
-        if (!is_null($this->childListingProducts)) {
-            return $this->childListingProducts;
-        }
-
-        return $this->childListingProducts = $this->getTypeModel()->getChildListingsProducts();
-    }
-
-    public function createChildListingProduct(array $productOptions = array(),
-                                              array $channelOptions = array(),
-                                              $generalId = null)
-    {
-        $productVariation = $this->getProductVariation($productOptions);
-        if (empty($productVariation)) {
-            return;
-        }
-
-        $data = array(
-            'listing_id' => $this->getListingProduct()->getListingId(),
-            'product_id' => $this->getListingProduct()->getProductId(),
-            'status'     => Ess_M2ePro_Model_Listing_Product::STATUS_NOT_LISTED,
-            'general_id' => $generalId,
-            'is_general_id_owner' => $this->isGeneralIdOwner(),
-            'status_changer'   => Ess_M2ePro_Model_Listing_Product::STATUS_CHANGER_UNKNOWN,
-            'is_variation_product'    => 1,
-            'is_variation_parent'     => 0,
-            'variation_parent_id'     => $this->getListingProduct()->getId(),
-            'template_description_id' => $this->getAmazonListingProduct()->getTemplateDescriptionId(),
-        );
-
-        /** @var Ess_M2ePro_Model_Listing_Product $listingProduct */
-        $listingProduct = Mage::helper('M2ePro/Component')->getComponentModel(
-            Ess_M2ePro_Helper_Component_Amazon::NICK,'Listing_Product'
-        )->setData($data)->save();
-
-        /** @var Ess_M2ePro_Model_Amazon_Listing_Product $amazonListingProduct */
-        $amazonListingProduct = $listingProduct->getChildObject();
-
-        /** @var Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Child $typeModel */
-        $typeModel = $amazonListingProduct->getVariationManager()->getTypeModel();
-
-        !empty($productOptions) && $typeModel->setProductVariation($productVariation);
-        !empty($channelOptions) && $typeModel->setChannelVariation($channelOptions);
-
-        $this->childListingProducts[$listingProduct->getId()] = $listingProduct;
-    }
-
-    public function tryToDeleteChildListingProduct(Ess_M2ePro_Model_Listing_Product $childListingProduct)
+    public function tryToRemoveChildListingProduct(Ess_M2ePro_Model_Listing_Product $childListingProduct)
     {
         if ($childListingProduct->isLocked()) {
             return false;
@@ -202,13 +169,12 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
             Mage::getModel('M2ePro/StopQueue')->add($childListingProduct);
         }
 
-        $childListingProduct->deleteInstance();
-        unset($this->childListingProducts[$childListingProduct->getId()]);
+        $this->getTypeModel()->removeChildListingProduct($childListingProduct->getId());
 
         return true;
     }
 
-    // ##########################################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Template_Description
@@ -230,21 +196,43 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
         return $this->getDescriptionTemplate()->getChildObject();
     }
 
-    // ##########################################################
+    //########################################
 
+    /**
+     * @return array|null
+     */
     public function getPossibleThemes()
     {
         if (!is_null($this->possibleThemes)) {
             return $this->possibleThemes;
         }
 
-        return $this->possibleThemes = Mage::getModel('M2ePro/Amazon_Marketplace_Details')
-            ->setMarketplaceId($this->getMarketplaceId())
+        $marketPlaceId = $this->getMarketplaceId();
+
+        $possibleThemes = Mage::getModel('M2ePro/Amazon_Marketplace_Details')
+            ->setMarketplaceId($marketPlaceId)
             ->getVariationThemes(
                 $this->getAmazonDescriptionTemplate()->getProductDataNick()
             );
+
+        $variationHelper = Mage::helper('M2ePro/Component_Amazon_Variation');
+        $themesUsageData = $variationHelper->getThemesUsageData();
+        $usedThemes = array();
+
+        if (!empty($themesUsageData[$marketPlaceId])) {
+            foreach ($themesUsageData[$marketPlaceId] as $theme => $count) {
+                if (!empty($possibleThemes[$theme])) {
+                    $usedThemes[$theme] = $possibleThemes[$theme];
+                }
+            }
+        }
+
+        return $this->possibleThemes = array_merge($usedThemes, $possibleThemes);
     }
 
+    /**
+     * @return int|null
+     */
     public function getMarketplaceId()
     {
         if (!is_null($this->marketplaceId)) {
@@ -254,5 +242,5 @@ class Ess_M2ePro_Model_Amazon_Listing_Product_Variation_Manager_Type_Relation_Pa
         return $this->marketplaceId = $this->getListingProduct()->getListing()->getMarketplaceId();
     }
 
-    // ##########################################################
+    //########################################
 }

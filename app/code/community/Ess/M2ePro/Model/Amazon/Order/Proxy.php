@@ -1,17 +1,17 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
 {
-    // ########################################
-
     /** @var $order Ess_M2ePro_Model_Amazon_Order */
     protected $order = NULL;
 
-    // ########################################
+    //########################################
 
     /**
      * @param Ess_M2ePro_Model_Order_Item_Proxy[] $items
@@ -27,14 +27,17 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         }
 
         if (count($items) == 0) {
-            throw new Exception('Every Item in order has zero Price.');
+            throw new Ess_M2ePro_Model_Exception('Every Item in Order has zero Price.');
         }
 
         return parent::mergeItems($items);
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return string
+     */
     public function getCheckoutMethod()
     {
         if ($this->order->getAmazonAccount()->isMagentoOrdersCustomerPredefined() ||
@@ -45,23 +48,35 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return self::CHECKOUT_GUEST;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function isOrderNumberPrefixSourceChannel()
     {
         return $this->order->getAmazonAccount()->isMagentoOrdersNumberSourceChannel();
     }
 
+    /**
+     * @return bool
+     */
     public function isOrderNumberPrefixSourceMagento()
     {
         return $this->order->getAmazonAccount()->isMagentoOrdersNumberSourceMagento();
     }
 
+    /**
+     * @return mixed
+     */
     public function getChannelOrderNumber()
     {
         return $this->order->getAmazonOrderId();
     }
 
+    /**
+     * @return null|string
+     */
     public function getOrderNumberPrefix()
     {
         if (!$this->order->getAmazonAccount()->isMagentoOrdersNumberPrefixEnable()) {
@@ -71,15 +86,22 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return $this->order->getAmazonAccount()->getMagentoOrdersNumberPrefix();
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return mixed
+     */
     public function getBuyerEmail()
     {
         return $this->order->getBuyerEmail();
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return false|Mage_Core_Model_Abstract|Mage_Customer_Model_Customer
+     * @throws Ess_M2ePro_Model_Exception
+     */
     public function getCustomer()
     {
         $customer = Mage::getModel('customer/customer');
@@ -88,7 +110,8 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
             $customer->load($this->order->getAmazonAccount()->getMagentoOrdersCustomerId());
 
             if (is_null($customer->getId())) {
-                throw new Exception('Customer with ID specified in Amazon account settings does not exist.');
+                throw new Ess_M2ePro_Model_Exception('Customer with ID specified in Amazon Account
+                    Settings does not exist.');
             }
         }
 
@@ -104,24 +127,22 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
 
             $customerInfo['website_id'] = $this->order->getAmazonAccount()->getMagentoOrdersCustomerNewWebsiteId();
             $customerInfo['group_id'] = $this->order->getAmazonAccount()->getMagentoOrdersCustomerNewGroupId();
-//            $customerInfo['is_subscribed'] = $this->order->getAmazonAccount()->isMagentoOrdersCustomerNewSubscribed();
 
             /** @var $customerBuilder Ess_M2ePro_Model_Magento_Customer */
             $customerBuilder = Mage::getModel('M2ePro/Magento_Customer')->setData($customerInfo);
             $customerBuilder->buildCustomer();
 
             $customer = $customerBuilder->getCustomer();
-
-//            if ($this->order->getAmazonAccount()->isMagentoOrdersCustomerNewNotifyWhenCreated()) {
-//                $customer->sendNewAccountEmail();
-//            }
         }
 
         return $customer;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getBillingAddressData()
     {
         if ($this->order->getAmazonAccount()->isMagentoOrdersBillingAddressSameAsShipping()) {
@@ -140,13 +161,16 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
             'country_id' => '',
             'region'     => '',
             'region_id'  => '',
-            'city'       => 'Amazon does not supply the complete billing buyer information.',
+            'city'       => 'Amazon does not supply the complete billing Buyer information.',
             'postcode'   => '',
             'street'     => array(),
             'company'    => ''
         );
     }
 
+    /**
+     * @return bool
+     */
     public function shouldIgnoreBillingAddressValidation()
     {
         if ($this->order->getAmazonAccount()->isMagentoOrdersBillingAddressSameAsShipping()) {
@@ -160,15 +184,18 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return true;
     }
 
-    // ########################################
+    //########################################
 
     public function getCurrency()
     {
         return $this->order->getCurrency();
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getPaymentData()
     {
         $paymentData = array(
@@ -183,17 +210,50 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return $paymentData;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getShippingData()
     {
-        return array(
+        $shippingData = array(
             'shipping_method' => $this->order->getShippingService(),
             'shipping_price'  => $this->getBaseShippingPrice(),
             'carrier_title'   => Mage::helper('M2ePro')->__('Amazon Shipping')
         );
+
+        if ($this->order->isPrime()) {
+            $shippingData['shipping_method'] .= ' | Is Prime';
+        }
+
+        if ($this->order->isMerchantFulfillmentApplied()) {
+            $merchantFulfillmentInfo = $this->order->getMerchantFulfillmentData();
+
+            $shippingData['shipping_method'] .= ' | Amazon\'s Shipping Services';
+
+            if (!empty($merchantFulfillmentInfo['shipping_service']['carrier_name'])) {
+                $carrier = $merchantFulfillmentInfo['shipping_service']['carrier_name'];
+                $shippingData['shipping_method'] .= ' | Carrier: '.$carrier;
+            }
+
+            if (!empty($merchantFulfillmentInfo['shipping_service']['name'])) {
+                $service = $merchantFulfillmentInfo['shipping_service']['name'];
+                $shippingData['shipping_method'] .= ' | Service: '.$service;
+            }
+
+            if (!empty($merchantFulfillmentInfo['shipping_service']['date']['estimated_delivery']['latest'])) {
+                $deliveryDate = $merchantFulfillmentInfo['shipping_service']['date']['estimated_delivery']['latest'];
+                $shippingData['shipping_method'] .= ' | Delivery Date: '.$deliveryDate;
+            }
+        }
+
+        return $shippingData;
     }
 
+    /**
+     * @return float
+     */
     protected function getShippingPrice()
     {
         $price = $this->order->getShippingPrice() - $this->order->getShippingDiscountAmount();
@@ -205,8 +265,11 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return $price;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return array
+     */
     public function getChannelComments()
     {
         $comments = array();
@@ -238,7 +301,7 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         }
 
         // Gift Wrapped Items
-        // ---------------------------------------------------
+        // ---------------------------------------
         $itemsGiftPrices = array();
 
         /** @var Ess_M2ePro_Model_Order_Item[] $items */
@@ -273,42 +336,60 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
 
             $comments[] = $comment;
         }
-        // ---------------------------------------------------
+        // ---------------------------------------
 
         return $comments;
     }
 
-    // ########################################
+    //########################################
 
+    /**
+     * @return bool
+     */
     public function hasTax()
     {
         return $this->order->getProductPriceTaxRate() > 0;
     }
 
+    /**
+     * @return bool
+     */
     public function isSalesTax()
     {
         return $this->hasTax();
     }
 
+    /**
+     * @return bool
+     */
     public function isVatTax()
     {
         return false;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return float|int
+     */
     public function getProductPriceTaxRate()
     {
         return $this->order->getProductPriceTaxRate();
     }
 
+    /**
+     * @return float|int
+     */
     public function getShippingPriceTaxRate()
     {
         return $this->order->getShippingPriceTaxRate();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return bool|null
+     */
     public function isProductPriceIncludeTax()
     {
         $configValue = Mage::helper('M2ePro/Module')
@@ -326,6 +407,9 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return null;
     }
 
+    /**
+     * @return bool|null
+     */
     public function isShippingPriceIncludeTax()
     {
         $configValue = Mage::helper('M2ePro/Module')
@@ -343,22 +427,31 @@ class Ess_M2ePro_Model_Amazon_Order_Proxy extends Ess_M2ePro_Model_Order_Proxy
         return null;
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
+    /**
+     * @return bool
+     */
     public function isTaxModeNone()
     {
         return $this->order->getAmazonAccount()->isMagentoOrdersTaxModeNone();
     }
 
+    /**
+     * @return bool
+     */
     public function isTaxModeMagento()
     {
         return $this->order->getAmazonAccount()->isMagentoOrdersTaxModeMagento();
     }
 
+    /**
+     * @return bool
+     */
     public function isTaxModeChannel()
     {
         return $this->order->getAmazonAccount()->isMagentoOrdersTaxModeChannel();
     }
 
-    // ########################################
+    //########################################
 }

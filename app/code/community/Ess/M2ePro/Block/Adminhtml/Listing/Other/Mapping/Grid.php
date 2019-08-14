@@ -1,26 +1,30 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Listing_Other_Mapping_Grid extends Mage_Adminhtml_Block_Widget_Grid
 {
+    //########################################
+
     public function __construct()
     {
         parent::__construct();
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('listingOtherMappingGrid');
-        //------------------------------
+        // ---------------------------------------
 
         // Set default values
-        //------------------------------
+        // ---------------------------------------
         $this->setDefaultSort('product_id');
         $this->setDefaultDir('DESC');
         $this->setUseAjax(true);
-        //------------------------------
+        // ---------------------------------------
     }
 
     protected function _prepareCollection()
@@ -86,6 +90,20 @@ class Ess_M2ePro_Block_Adminhtml_Listing_Other_Mapping_Grid extends Mage_Adminht
             'options' => $tempTypes
         ));
 
+        $this->addColumn('stock_availability', array(
+            'header'=> Mage::helper('M2ePro')->__('Stock Availability'),
+            'width' => '100px',
+            'index' => 'is_in_stock',
+            'filter_index' => 'is_in_stock',
+            'type'  => 'options',
+            'sortable'  => false,
+            'options' => array(
+                1 => Mage::helper('M2ePro')->__('In Stock'),
+                0 => Mage::helper('M2ePro')->__('Out of Stock')
+            ),
+            'frame_callback' => array($this, 'callbackColumnStockAvailability')
+        ));
+
         $this->addColumn('actions', array(
             'header'       => Mage::helper('M2ePro')->__('Actions'),
             'align'        => 'left',
@@ -98,7 +116,7 @@ class Ess_M2ePro_Block_Adminhtml_Listing_Other_Mapping_Grid extends Mage_Adminht
 
     }
 
-    // ####################################
+    //########################################
 
     public function callbackColumnProductId($productId, $product, $column, $isExport)
     {
@@ -147,6 +165,15 @@ class Ess_M2ePro_Block_Adminhtml_Listing_Other_Mapping_Grid extends Mage_Adminht
         return '<div style="margin-left: 3px">'.Mage::helper('M2ePro')->escapeHtml($value).'</div>';
     }
 
+    public function callbackColumnStockAvailability($value, $row, $column, $isExport)
+    {
+        if ((int)$row->getData('is_in_stock') <= 0) {
+            return '<span style="color: red;">'.$value.'</span>';
+        }
+
+        return $value;
+    }
+
     public function callbackColumnActions($value, $row, $column, $isExport)
     {
         $return = '&nbsp;<a href="javascript:void(0);" ';
@@ -175,28 +202,28 @@ class Ess_M2ePro_Block_Adminhtml_Listing_Other_Mapping_Grid extends Mage_Adminht
 
     }
 
-    // ####################################
+    //########################################
 
     protected function _toHtml()
     {
-        $javascriptsMain = <<<JAVASCRIPT
+        $javascriptsMain = <<<HTML
 <script type="text/javascript">
 
-    $$('#listingOtherMappingGrid div.grid th').each(function(el){
+    $$('#listingOtherMappingGrid div.grid th').each(function(el) {
         el.style.padding = '2px 4px';
     });
 
-    $$('#listingOtherMappingGrid div.grid td').each(function(el){
+    $$('#listingOtherMappingGrid div.grid td').each(function(el) {
         el.style.padding = '2px 4px';
     });
 
 </script>
-JAVASCRIPT;
+HTML;
 
         return parent::_toHtml() . $javascriptsMain;
     }
 
-    // ####################################
+    //########################################
 
     public function getGridUrl()
     {
@@ -208,5 +235,5 @@ JAVASCRIPT;
         return false;
     }
 
-    // ####################################
+    //########################################
 }

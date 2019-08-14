@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 abstract class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Abstract
@@ -12,14 +14,14 @@ abstract class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Abstract
      */
     protected $validatorsData = array();
 
-    // ########################################
+    //########################################
 
     public function setValidatorsData(array $data)
     {
         $this->validatorsData = $data;
     }
 
-    // ########################################
+    //########################################
 
     protected function searchNotFoundAttributes()
     {
@@ -39,7 +41,7 @@ abstract class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Abstract
         return false;
     }
 
-    // -----------------------------------------
+    // ---------------------------------------
 
     protected function addNotFoundAttributesMessages($title, array $attributes)
     {
@@ -51,15 +53,15 @@ abstract class Ess_M2ePro_Model_Amazon_Listing_Product_Action_Request_Abstract
                     $this->getListing()->getStoreId());
         }
         // M2ePro_TRANSLATIONS
-        // %attribute_title%: attribute(s) %attributes% were not found in this Product and its value was not sent.
+        // %attribute_title%: Attribute(s) %attributes% were not found in this Product and its value was not sent.
         $this->addWarningMessage(
             Mage::helper('M2ePro')->__(
-                '%attribute_title%: attribute(s) %attributes% were not found'.
+                '%attribute_title%: Attribute(s) %attributes% were not found'.
                 ' in this Product and its value was not sent.',
                 Mage::helper('M2ePro')->__($title), implode(',',$attributesTitles)
             )
         );
     }
 
-    // ########################################
+    //########################################
 }

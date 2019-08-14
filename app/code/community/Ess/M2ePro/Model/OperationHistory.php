@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
@@ -13,7 +15,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
      */
     private $object = NULL;
 
-    //####################################
+    //########################################
 
     public function _construct()
     {
@@ -21,7 +23,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         $this->_init('M2ePro/OperationHistory');
     }
 
-    //####################################
+    //########################################
 
     public function setObject($value)
     {
@@ -31,6 +33,8 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
             $this->object = Mage::getModel('M2ePro/OperationHistory')->load($value);
             !$this->object->getId() && $this->object = NULL;
         }
+
+        return $this;
     }
 
     /**
@@ -41,7 +45,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         return $this->object;
     }
 
-    //####################################
+    //########################################
 
     public function start($nick, $parentId = NULL, $initiator = Ess_M2ePro_Helper_Data::INITIATOR_UNKNOWN)
     {
@@ -68,7 +72,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         return true;
     }
 
-    //####################################
+    //########################################
 
     public function setContentData($key, $value)
     {
@@ -106,7 +110,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         return NULL;
     }
 
-    //####################################
+    //########################################
 
     public function cleanOldData()
     {
@@ -131,7 +135,17 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         $functionCode =
             '$object = Mage::getModel(\'M2ePro/OperationHistory\');
              $object->setObject('.$this->object->getId().');
-             $object->stop();
+
+             if (!$object->stop()) {
+                return;
+             }
+
+             $collection = $object->getCollection()
+                     ->addFieldToFilter(\'parent_id\', '.$this->object->getId().');
+
+             if ($collection->getSize()) {
+                return;
+             }
 
              $error = error_get_last();
 
@@ -155,7 +169,7 @@ class Ess_M2ePro_Model_OperationHistory extends Ess_M2ePro_Model_Abstract
         return true;
     }
 
-    //####################################
+    //########################################
 
     public function getDataInfo($nestingLevel = 0)
     {
@@ -209,7 +223,7 @@ INFO;
         return $dataInfo;
     }
 
-    //------------------------------------
+    // ---------------------------------------
 
     protected function getTotalTime()
     {
@@ -229,5 +243,5 @@ INFO;
         return "{$minutes}:{$seconds}";
     }
 
-    //####################################
+    //########################################
 }

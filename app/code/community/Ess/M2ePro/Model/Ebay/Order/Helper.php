@@ -1,23 +1,24 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Ebay_Order_Helper
 {
-    // ##########################################################
-
     const EBAY_ORDER_STATUS_ACTIVE    = 'Active';
     const EBAY_ORDER_STATUS_COMPLETED = 'Completed';
     const EBAY_ORDER_STATUS_CANCELLED = 'Cancelled';
+    const EBAY_ORDER_STATUS_INACTIVE  = 'Inactive';
 
     const EBAY_CHECKOUT_STATUS_COMPLETE = 'Complete';
 
     const EBAY_PAYMENT_METHOD_NONE      = 'None';
     const EBAY_PAYMENT_STATUS_SUCCEEDED = 'NoPaymentFailure';
 
-    // ##########################################################
+    //########################################
 
     public function getOrderStatus($orderStatusEbay)
     {
@@ -35,12 +36,16 @@ class Ess_M2ePro_Model_Ebay_Order_Helper
             case self::EBAY_ORDER_STATUS_CANCELLED:
                 $orderStatus = Ess_M2ePro_Model_Ebay_Order::ORDER_STATUS_CANCELLED;
                 break;
+
+            case self::EBAY_ORDER_STATUS_INACTIVE:
+                $orderStatus = Ess_M2ePro_Model_Ebay_Order::ORDER_STATUS_INACTIVE;
+                break;
         }
 
         return $orderStatus;
     }
 
-    // ##########################################################
+    //########################################
 
     public function getCheckoutStatus($checkoutStatusEbay)
     {
@@ -70,7 +75,6 @@ class Ess_M2ePro_Model_Ebay_Order_Helper
                     ? Ess_M2ePro_Model_Ebay_Order::PAYMENT_STATUS_COMPLETED
                     : Ess_M2ePro_Model_Ebay_Order::PAYMENT_STATUS_PROCESS;
             }
-
         }
 
         return Ess_M2ePro_Model_Ebay_Order::PAYMENT_STATUS_ERROR;
@@ -87,7 +91,7 @@ class Ess_M2ePro_Model_Ebay_Order_Helper
         return Ess_M2ePro_Model_Ebay_Order::SHIPPING_STATUS_COMPLETED;
     }
 
-    // ##########################################################
+    //########################################
 
     public function getPaymentMethodNameByCode($code, $marketplaceId)
     {
@@ -138,5 +142,5 @@ class Ess_M2ePro_Model_Ebay_Order_Helper
         return !empty($shipping['title']) ? $shipping['title'] : $code;
     }
 
-    // ##########################################################
+    //########################################
 }

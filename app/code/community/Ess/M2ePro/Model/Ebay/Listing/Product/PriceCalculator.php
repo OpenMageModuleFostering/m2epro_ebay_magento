@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2015 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 /**
@@ -12,14 +14,26 @@
 class Ess_M2ePro_Model_Ebay_Listing_Product_PriceCalculator
     extends Ess_M2ePro_Model_Listing_Product_PriceCalculator
 {
-    // ########################################
-
     /**
      * @var bool
      */
     private $isIncreaseByVatPercent = false;
 
-    // ########################################
+    //########################################
+
+    protected function isPriceVariationModeParent()
+    {
+        return $this->getPriceVariationMode()
+                            == Ess_M2ePro_Model_Ebay_Template_SellingFormat::PRICE_VARIATION_MODE_PARENT;
+    }
+
+    protected function isPriceVariationModeChildren()
+    {
+        return $this->getPriceVariationMode()
+                            == Ess_M2ePro_Model_Ebay_Template_SellingFormat::PRICE_VARIATION_MODE_CHILDREN;
+    }
+
+    //########################################
 
     /**
      * @param bool $value
@@ -39,7 +53,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_PriceCalculator
         return $this->isIncreaseByVatPercent;
     }
 
-    // ########################################
+    //########################################
 
     public function getVariationValue(Ess_M2ePro_Model_Listing_Product_Variation $variation)
     {
@@ -50,7 +64,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_PriceCalculator
         return parent::getVariationValue($variation);
     }
 
-    // ########################################
+    //########################################
 
     protected function prepareFinalValue($value)
     {
@@ -69,7 +83,7 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_PriceCalculator
         return $value + (($vatPercent*$value) / 100);
     }
 
-    // ########################################
+    //########################################
 
     protected function prepareOptionTitles($optionTitles)
     {
@@ -82,5 +96,5 @@ class Ess_M2ePro_Model_Ebay_Listing_Product_PriceCalculator
         return $optionTitles;
     }
 
-    // ########################################
+    //########################################
 }

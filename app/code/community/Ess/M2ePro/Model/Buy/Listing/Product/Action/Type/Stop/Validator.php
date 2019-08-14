@@ -1,32 +1,34 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_Stop_Validator
     extends Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_Validator
 {
-    // ########################################
+    //########################################
 
-    public function isValid()
+    /**
+     * @return bool
+     */
+    public function validate()
     {
         $params = $this->getParams();
-
-        if (!$this->validateLockedObject()) {
-            return false;
-        }
 
         if (!$this->getListingProduct()->isStoppable()) {
 
             if (empty($params['remove'])) {
 
                 // M2ePro_TRANSLATIONS
-                // Item is not listed or not available
+                // Item is not Listed or not available
                 $this->addMessage('Item is not active or not available');
 
             } else {
                 $this->getListingProduct()->deleteInstance();
+                $this->getListingProduct()->isDeleted(true);
             }
 
             return false;
@@ -51,5 +53,5 @@ class Ess_M2ePro_Model_Buy_Listing_Product_Action_Type_Stop_Validator
         return true;
     }
 
-    // ########################################
+    //########################################
 }

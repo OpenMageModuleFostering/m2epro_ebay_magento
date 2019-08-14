@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 final class Ess_M2ePro_Model_Synchronization_Dispatcher
@@ -21,7 +23,7 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
     private $params = array();
     private $initiator = Ess_M2ePro_Helper_Data::INITIATOR_UNKNOWN;
 
-    //####################################
+    //########################################
 
     public function process()
     {
@@ -46,7 +48,6 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
             $result = !$this->processComponent(Ess_M2ePro_Helper_Component_Ebay::NICK) ? false : $result;
             $result = !$this->processComponent(Ess_M2ePro_Helper_Component_Amazon::NICK) ? false : $result;
             $result = !$this->processComponent(Ess_M2ePro_Helper_Component_Buy::NICK) ? false : $result;
-            $result = !$this->processComponent(Ess_M2ePro_Helper_Component_Play::NICK) ? false : $result;
 
         } catch (Exception $exception) {
 
@@ -73,7 +74,7 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $result;
     }
 
-    // ----------------------------------
+    // ---------------------------------------
 
     protected function processComponent($component)
     {
@@ -107,56 +108,83 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $task;
     }
 
-    //####################################
+    //########################################
 
+    /**
+     * @param array $components
+     */
     public function setAllowedComponents(array $components)
     {
         $this->allowedComponents = $components;
     }
 
+    /**
+     * @return array
+     */
     public function getAllowedComponents()
     {
         return $this->allowedComponents;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @param array $types
+     */
     public function setAllowedTasksTypes(array $types)
     {
         $this->allowedTasksTypes = $types;
     }
 
+    /**
+     * @return array
+     */
     public function getAllowedTasksTypes()
     {
         return $this->allowedTasksTypes;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @param array $params
+     */
     public function setParams(array $params)
     {
         $this->params = $params;
     }
 
+    /**
+     * @return array
+     */
     public function getParams()
     {
         return $this->params;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @param int $value
+     */
     public function setInitiator($value)
     {
         $this->initiator = (int)$value;
     }
 
+    /**
+     * @return int
+     */
     public function getInitiator()
     {
         return $this->initiator;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @param Ess_M2ePro_Model_LockItem $object
+     */
     public function setParentLockItem(Ess_M2ePro_Model_LockItem $object)
     {
         $this->parentLockItem = $object;
@@ -170,8 +198,11 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $this->parentLockItem;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
+    /**
+     * @param Ess_M2ePro_Model_OperationHistory $object
+     */
     public function setParentOperationHistory(Ess_M2ePro_Model_OperationHistory $object)
     {
         $this->parentOperationHistory = $object;
@@ -185,7 +216,7 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $this->parentOperationHistory;
     }
 
-    //####################################
+    //########################################
 
     protected function initialize()
     {
@@ -211,7 +242,7 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         $this->setConfigValue(NULL,'last_run',$currentDateTime);
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
     protected function beforeStart()
     {
@@ -230,10 +261,12 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
 
         $this->getLog()->setOperationHistoryId($this->getOperationHistory()->getObject()->getId());
 
-        $this->checkAndPrepareProductChange();
-
         if (in_array(Ess_M2ePro_Model_Synchronization_Task::ORDERS, $this->getAllowedTasksTypes())) {
             Mage::dispatchEvent('m2epro_synchronization_before_start', array());
+        }
+
+        if (in_array(Ess_M2ePro_Model_Synchronization_Task::TEMPLATES, $this->getAllowedTasksTypes())) {
+            $this->clearOutdatedProductChanges();
         }
     }
 
@@ -243,16 +276,15 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
             Mage::dispatchEvent('m2epro_synchronization_after_end', array());
         }
 
-        Mage::getModel('M2ePro/ProductChange')->clearLastProcessed(
-            $this->getOperationHistory()->getObject()->getData('start_date'),
-            (int)$this->getConfigValue('/settings/product_change/', 'max_count_per_one_time')
-        );
+        if (in_array(Ess_M2ePro_Model_Synchronization_Task::TEMPLATES, $this->getAllowedTasksTypes())) {
+            $this->clearProcessedProductChanges();
+        }
 
         $this->getOperationHistory()->stop();
         $this->getLockItem()->remove();
     }
 
-    //####################################
+    //########################################
 
     /**
      * @return Ess_M2ePro_Model_Synchronization_LockItem
@@ -289,35 +321,59 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $this->log;
     }
 
-    // -----------------------------------
+    // ---------------------------------------
 
-    protected function checkAndPrepareProductChange()
+    protected function clearOutdatedProductChanges()
     {
-        Mage::getModel('M2ePro/ProductChange')->clearOutdated(
-            $this->getConfigValue('/settings/product_change/', 'max_lifetime')
+        /** @var Mage_Core_Model_Resource $resource */
+        $resource = Mage::getSingleton('core/resource');
+        /** @var $connWrite Varien_Db_Adapter_Pdo_Mysql */
+        $connWrite = $resource->getConnection('core_write');
+
+        $tempDate = new DateTime('now', new DateTimeZone('UTC'));
+        $tempDate->modify('-'.$this->getConfigValue('/settings/product_change/', 'max_lifetime').' seconds');
+        $tempDate = Mage::helper('M2ePro')->getDate($tempDate->format('U'));
+
+        $connWrite->delete(
+            $resource->getTableName('m2epro_product_change'),
+            array(
+                'update_date <= (?)' => $tempDate
+            )
         );
-        Mage::getModel('M2ePro/ProductChange')->clearExcessive(
-            (int)$this->getConfigValue('/settings/product_change/', 'max_count')
-        );
-
-        $startDate = $this->getOperationHistory()->getObject()->getData('start_date');
-        $maxCountPerOneTime = (int)$this->getConfigValue('/settings/product_change/', 'max_count_per_one_time');
-
-        $functionCode = "Mage::getModel('M2ePro/ProductChange')
-                                ->clearLastProcessed('{$startDate}',{$maxCountPerOneTime});";
-
-        $shutdownFunction = create_function('', $functionCode);
-        register_shutdown_function($shutdownFunction);
     }
 
-    //####################################
+    protected function clearProcessedProductChanges()
+    {
+        /** @var Ess_M2ePro_Model_Mysql4_ProductChange_Collection $productChangeCollection */
+        $productChangeCollection = Mage::getResourceModel('M2ePro/ProductChange_Collection');
+        $productChangeCollection->setPageSize(
+            (int)$this->getConfigValue('/settings/product_change/', 'max_count_per_one_time')
+        );
+        $productChangeCollection->setOrder('id', Varien_Data_Collection_Db::SORT_ORDER_ASC);
+
+        /** @var Mage_Core_Model_Resource $resource */
+        $resource = Mage::getSingleton('core/resource');
+        /** @var $connWrite Varien_Db_Adapter_Pdo_Mysql */
+        $connWrite = $resource->getConnection('core_write');
+
+        $connWrite->delete(
+            $resource->getTableName('m2epro_product_change'),
+            array(
+                'id IN (?)' => $productChangeCollection->getColumnValues('id'),
+                '(update_date <= \''.$this->getOperationHistory()->getObject()->getData('start_date').'\' OR
+                  initiators NOT LIKE \'%'.Ess_M2ePro_Model_ProductChange::INITIATOR_OBSERVER.'%\')'
+            )
+        );
+    }
+
+    //########################################
 
     private function getConfig()
     {
         return Mage::helper('M2ePro/Module')->getSynchronizationConfig();
     }
 
-    // ----------------------------------------
+    // ---------------------------------------
 
     private function getConfigValue($group, $key)
     {
@@ -329,5 +385,5 @@ final class Ess_M2ePro_Model_Synchronization_Dispatcher
         return $this->getConfig()->setGroupValue($group, $key, $value);
     }
 
-    //####################################
+    //########################################
 }

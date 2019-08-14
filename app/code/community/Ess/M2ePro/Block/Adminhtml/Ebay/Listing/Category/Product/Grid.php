@@ -1,7 +1,9 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
@@ -10,42 +12,44 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
     /** @var Ess_M2ePro_Model_Listing */
     private $listing = NULL;
 
+    //########################################
+
     public function __construct()
     {
         parent::__construct();
 
         // Initialization block
-        //------------------------------
+        // ---------------------------------------
         $this->setId('ebayListingCategoryProductGrid');
-        //------------------------------
+        // ---------------------------------------
 
         $this->listing = Mage::helper('M2ePro/Data_Global')->getValue('temp_data');
 
         // Set default values
-        //------------------------------
+        // ---------------------------------------
         $this->setDefaultSort('entity_id');
         $this->setDefaultDir('DESC');
         $this->setSaveParametersInSession(true);
         $this->setUseAjax(true);
-        //------------------------------
+        // ---------------------------------------
     }
 
-    // ####################################
+    //########################################
 
     protected function _prepareCollection()
     {
         // Get collection
-        //----------------------------
+        // ---------------------------------------
         $collection = Mage::getResourceModel('catalog/product_collection')
             ->addAttributeToSelect('name');
-        //----------------------------
+        // ---------------------------------------
 
-        //----------------------------
+        // ---------------------------------------
         $collection->getSelect()->distinct();
-        //----------------------------
+        // ---------------------------------------
 
         // Set filter store
-        //----------------------------
+        // ---------------------------------------
         $store = Mage::app()->getStore((int)$this->listing->getData('store_id'));
 
         if ($store->getId()) {
@@ -68,9 +72,9 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
         } else {
             $collection->addAttributeToSelect('thumbnail');
         }
-        //----------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $productAddIds = (array)json_decode($this->listing->getData('product_add_ids'), true);
 
         $collection->joinTable(
@@ -90,9 +94,7 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
         );
 
         $collection->getSelect()->where('lp.id IN (?)', $productAddIds);
-        //------------------------------
-
-//        exit($collection->getSelect()->__toString());
+        // ---------------------------------------
 
         // Set collection to grid
         $this->setCollection($collection);
@@ -160,14 +162,14 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
         $this->setMassactionIdField('listing_product_id');
         $this->setMassactionIdFieldOnlyIndexValue(true);
 
-        //--------------------------------
+        // ---------------------------------------
 
         $this->getMassactionBlock()->setGroups(array(
             'edit_settings'         => Mage::helper('M2ePro')->__('Edit Settings'),
             'other'                 => Mage::helper('M2ePro')->__('Other')
         ));
 
-        //--------------------------------
+        // ---------------------------------------
         $this->getMassactionBlock()->addItem('editCategories', array(
             'label' => Mage::helper('M2ePro')->__('All Categories'),
             'url'   => '',
@@ -199,7 +201,7 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
              'label'    => Mage::helper('M2ePro')->__('Remove Item(s)'),
              'url'      => '',
         ), 'other');
-        //--------------------------------
+        // ---------------------------------------
 
         return parent::_prepareMassaction();
     }
@@ -209,7 +211,7 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
         return 'M2ePro/adminhtml_grid_massaction';
     }
 
-    // ####################################
+    //########################################
 
     protected function _addColumnFilterToCollection($column)
     {
@@ -228,7 +230,7 @@ class Ess_M2ePro_Block_Adminhtml_Ebay_Listing_Category_Product_Grid
         return parent::_addColumnFilterToCollection($column);
     }
 
-    // ########################################
+    //########################################
 
     public function callbackColumnProductId($value, $row, $column, $isExport)
     {
@@ -460,7 +462,7 @@ HTML;
         return '<div style="padding-left: 10px; display: inline-block;">' . $result . '</div>';
     }
 
-    // ########################################
+    //########################################
 
     protected function callbackColumnCategoryFilterCallback($collection, $column)
     {
@@ -490,7 +492,7 @@ HTML;
         }
     }
 
-    // ########################################
+    //########################################
 
     public function getGridUrl()
     {
@@ -507,7 +509,7 @@ HTML;
         return false;
     }
 
-    // ####################################
+    //########################################
     protected function getGroupOrder()
     {
         return array(
@@ -572,11 +574,11 @@ HTML;
         return $actions;
     }
 
-    // ####################################
+    //########################################
 
     protected function _toHtml()
     {
-        //------------------------------
+        // ---------------------------------------
         $urls = Mage::helper('M2ePro')
             ->getControllerActions(
                 'adminhtml_ebay_listing_categorySettings',
@@ -601,9 +603,9 @@ HTML;
         );
 
         $urls = json_encode($urls);
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $translations = array();
         // M2ePro_TRANSLATIONS
         // You have not selected the Primary eBay Category for some Products.
@@ -614,12 +616,12 @@ HTML;
         $text = 'Are you sure?';
         $translations[$text] = Mage::helper('M2ePro')->__($text);
         // M2ePro_TRANSLATIONS
-        // eBay could not assign categories for %product_tite% Products.
-        $text = 'eBay could not assign categories for %product_title% Products.';
+        // eBay could not assign Categories for %product_tite% Products.
+        $text = 'eBay could not assign Categories for %product_title% Products.';
         $translations[$text] = Mage::helper('M2ePro')->__($text);
         // M2ePro_TRANSLATIONS
-        // Suggested Categories were successfully received for %product_title% Product(s).
-        $text = 'Suggested Categories were successfully received for %product_title% Product(s).';
+        // Suggested Categories were successfully Received for %product_title% Product(s).
+        $text = 'Suggested Categories were successfully Received for %product_title% Product(s).';
         $translations[$text] = Mage::helper('M2ePro')->__($text);
         // M2ePro_TRANSLATIONS
         // Set eBay Category
@@ -635,11 +637,11 @@ HTML;
         $translations[$text] = Mage::helper('M2ePro')->__($text);
 
         $translations = json_encode($translations);
-        //------------------------------
+        // ---------------------------------------
 
-        //------------------------------
+        // ---------------------------------------
         $constants = Mage::helper('M2ePro')->getClassConstantAsJson('Ess_M2ePro_Helper_Component_Ebay_Category');
-        //------------------------------
+        // ---------------------------------------
 
         $getSuggested = json_encode((bool)Mage::helper('M2ePro/Data_Global')->getValue('get_suggested'));
 
@@ -677,7 +679,7 @@ HTML;
         return parent::_toHtml() . $additionalJs . $commonJs;
     }
 
-    // ####################################
+    //########################################
 
     private function getGridIdsJson()
     {
@@ -695,5 +697,5 @@ HTML;
         return implode(',',$connRead->fetchCol($select));
     }
 
-    // ####################################
+    //########################################
 }

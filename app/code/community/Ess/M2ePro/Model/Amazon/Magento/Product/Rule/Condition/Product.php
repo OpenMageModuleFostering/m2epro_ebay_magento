@@ -1,12 +1,16 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Model_Amazon_Magento_Product_Rule_Condition_Product
     extends Ess_M2ePro_Model_Magento_Product_Rule_Condition_Product
 {
+    //########################################
+
     protected function getCustomFilters()
     {
         $amazonFilters = array(
@@ -45,8 +49,28 @@ class Ess_M2ePro_Model_Amazon_Magento_Product_Rule_Condition_Product
         return $this->_customFiltersCache[$filterId];
     }
 
+    /**
+     * If param is array validate each values till first true result
+     *
+     * @param   mixed $validatedValue product attribute value
+     * @return  bool
+     */
+
     public function validateAttribute($validatedValue)
     {
+        if (is_array($validatedValue) && $this->getAttribute() == 'amazon_online_price') {
+            $result = false;
+
+            foreach ($validatedValue as $value) {
+                $result = $this->validateAttribute($value);
+                if ($result) {
+                    break;
+                }
+            }
+
+            return $result;
+        }
+
         if (is_object($validatedValue)) {
             return false;
         }
@@ -64,9 +88,7 @@ class Ess_M2ePro_Model_Amazon_Magento_Product_Rule_Condition_Product
             $value = strtotime($value);
         }
 
-        /**
-         * Comparison operator
-         */
+        // Comparison operator
         $op = $this->getOperatorForValidate();
 
         // if operator requires array and it is not, or on opposite, return false
@@ -172,4 +194,6 @@ class Ess_M2ePro_Model_Amazon_Magento_Product_Rule_Condition_Product
 
         return $result;
     }
+
+    //########################################
 }

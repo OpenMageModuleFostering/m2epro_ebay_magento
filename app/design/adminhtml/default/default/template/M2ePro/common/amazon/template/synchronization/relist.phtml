@@ -1,6 +1,8 @@
 <div id="block_notice_amazon_template_synchronization_relist" class="block_notices_module" title="<?php echo Mage::helper('M2ePro')->__('Relist Rules'); ?>">
-    <?php echo Mage::helper('M2ePro')->__('If <strong>Relist Action</strong> is enabled, M2E Pro will relist Items on Amazon if they meet all the conditions you set.<br/>
-    '); ?>
+    <?php echo Mage::helper('M2ePro')->__('If <strong>Relist Action</strong> is enabled, M2E Pro will Relist Items on Amazon if they meet all the Conditions you set.<br/><br/>
+    More detailed information about ability to work with this Page you can find <a href="%url%" target="_blank">here</a>.',
+    Mage::helper('M2ePro/Module_Support')->getDocumentationUrl(NULL, NULL, 'x/GYMVAQ')
+    ); ?>
 </div>
 
 <?php
@@ -63,7 +65,7 @@
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Relist Action'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Relist Action'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_mode" name="relist_mode" class="required-entry">
@@ -71,14 +73,14 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_MODE_YES; ?>" <?php if ($formData['relist_mode'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_MODE_YES): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Enabled'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Enables/Disables the Relist action for the Listings, which use current Synchronization Policy.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Enables/Disables the Relist Action for the Listings, which use current Synchronization Policy.'); ?></span>
                         </p>
                     </td>
                 </tr>
 
                 <tr id="relist_filter_user_lock_tr_container" <?php if ($formData['relist_mode'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_MODE_NONE): echo ' style="display:none;"'; endif; ?>>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Relist When Stopped Manually'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Relist When Stopped Manually'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_filter_user_lock" name="relist_filter_user_lock" class="required-entry">
@@ -86,7 +88,7 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_FILTER_USER_LOCK_NONE; ?>" <?php if ($formData['relist_filter_user_lock'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_FILTER_USER_LOCK_NONE): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Yes'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Automatically relists Item(s) even it has been stopped manually within M2E Pro.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Automatically Relists Item(s) even it has been Stopped manually within M2E Pro.'); ?></span>
                         </p>
                     </td>
                 </tr>
@@ -94,7 +96,7 @@
                 <tr id="relist_send_data_tr_container" <?php if ($formData['relist_mode'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_MODE_NONE): echo ' style="display:none;"';
                 endif; ?>>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Synchronize Data'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Synchronize Data'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_send_data" name="relist_send_data" class="required-entry">
@@ -105,7 +107,7 @@
                             <span>
                                 <?php echo Mage::helper('M2ePro')->__(
                                     '<strong>No:</strong> In this case M2E Pro will only update Quantity, ignoring any changes that have been made on Magento. <br/><br/>
-                                     <strong>Yes:</strong> Any changes that have been made in Magento to Items that are being relisted will be reflected on the Amazon Listing.'
+                                     <strong>Yes:</strong> Any changes that have been made in Magento to Items that are being Relisted will be Reflected on the Amazon Listing.'
                                 ); ?>
                             </span>
                         </p>
@@ -132,7 +134,7 @@
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Product Status'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Product Status'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_status_enabled" name="relist_status_enabled" class="required-entry M2ePro-validate-stop-relist-conditions-product-status">
@@ -140,14 +142,14 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_STATUS_ENABLED_YES; ?>" <?php if ($formData['relist_status_enabled'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_STATUS_ENABLED_YES): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Enabled'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Product Status at which the item(s) have to be relisted.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Product Status at which the Item(s) have to be Relisted.'); ?></span>
                         </p>
                     </td>
                 </tr>
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Stock Availability'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Stock Availability'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_is_in_stock" name="relist_is_in_stock" class="required-entry M2ePro-validate-stop-relist-conditions-stock-availability">
@@ -155,14 +157,14 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_IS_IN_STOCK_YES; ?>" <?php if ($formData['relist_is_in_stock'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_IS_IN_STOCK_YES): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('In Stock'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Stock Availability at which the Item(s) have to be relisted.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Stock Availability at which the Item(s) have to be Relisted.'); ?></span>
                         </p>
                     </td>
                 </tr>
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Magento Quantity'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Magento Quantity'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_qty_magento" name="relist_qty_magento" class="required-entry M2ePro-validate-stop-relist-conditions-item-qty" qty_type="magento">
@@ -172,7 +174,7 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_QTY_BETWEEN; ?>" <?php if ($formData['relist_qty_magento'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_QTY_BETWEEN): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Between'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Magento Product(s) Quantity at which the Item(s) have to be relisted.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Magento Product(s) Quantity at which the Item(s) have to be Relisted.'); ?></span>
                         </p>
                     </td>
                 </tr>
@@ -200,7 +202,7 @@
 
                 <tr>
                     <td class="label">
-                        <label><?php echo Mage::helper('M2ePro')->__('Calculated Quantity'); ?>: <span class="required">*</span></label>
+                        <label><?php echo Mage::helper('M2ePro')->__('Calculated Quantity'); ?>: </label>
                     </td>
                     <td class="value" style="width: auto;">
                         <select id="relist_qty_calculated" name="relist_qty_calculated" class="required-entry M2ePro-validate-stop-relist-conditions-item-qty" qty_type="calculated">
@@ -210,7 +212,7 @@
                             <option value="<?php echo Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_QTY_BETWEEN; ?>" <?php if ($formData['relist_qty_calculated'] == Ess_M2ePro_Model_Amazon_Template_Synchronization::RELIST_QTY_BETWEEN): echo ' selected="selected"'; endif; ?>><?php echo Mage::helper('M2ePro')->__('Between'); ?></option>
                         </select>
                         <p class="note">
-                            <span><?php echo Mage::helper('M2ePro')->__('Calculated Quantity according to the Selling Format Policy at which the Item(s) have to be relisted.'); ?></span>
+                            <span><?php echo Mage::helper('M2ePro')->__('Calculated Quantity according to the Selling Format Policy at which the Item(s) have to be Relisted.'); ?></span>
                         </p>
                     </td>
                 </tr>

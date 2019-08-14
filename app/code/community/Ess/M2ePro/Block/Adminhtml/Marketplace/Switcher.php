@@ -1,17 +1,23 @@
 <?php
 
 /*
- * @copyright  Copyright (c) 2013 by  ESS-UA.
+ * @author     M2E Pro Developers Team
+ * @copyright  2011-2015 ESS-UA [M2E Pro]
+ * @license    Commercial use is forbidden
  */
 
 class Ess_M2ePro_Block_Adminhtml_Marketplace_Switcher extends Ess_M2ePro_Block_Adminhtml_Component_Switcher
 {
     protected $paramName = 'marketplace';
 
-    // ########################################
+    //########################################
 
     public function getLabel()
     {
+        if ($this->getData('component_mode') == Ess_M2ePro_Helper_Component_Ebay::NICK) {
+            return Mage::helper('M2ePro')->__('eBay Site');
+        }
+
         return Mage::helper('M2ePro')->__($this->getComponentLabel('%component% Marketplace'));
     }
 
@@ -54,12 +60,16 @@ class Ess_M2ePro_Block_Adminhtml_Marketplace_Switcher extends Ess_M2ePro_Block_A
         return $items;
     }
 
-    // ########################################
+    //########################################
 
     public function getDefaultOptionName()
     {
+        if ($this->getData('component_mode') == Ess_M2ePro_Helper_Component_Ebay::NICK) {
+            return Mage::helper('M2ePro')->__('All Sites');
+        }
+
         return Mage::helper('M2ePro')->__('All Marketplaces');
     }
 
-    // ########################################
+    //########################################
 }
